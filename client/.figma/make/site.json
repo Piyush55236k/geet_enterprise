@@ -1,0 +1,10 @@
+{
+  "description": "Calculate business loan EMIs, interest, fees, and repayment schedules, then save and manage funding estimates for faster, clearer financing decisions.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Geet Enterprise | Mobile-First Financial Reports & Expenses</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Hide scrollbars on horizontal pill nav */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .sidebar-link.active {
+      background-color: #1e293b;
+      color: #38bdf8;
+      border-right: 3px solid #38bdf8;
+    }
+    .bottom-nav-link.active {
+      color: #0284c7;
+      font-weight: 600;
+    }
+    .pill-nav.active {
+      background-color: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; }
+      .print-full { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 pb-20 lg:pb-0">
+
+<!-- DEMO ENVIRONMENT BANNER -->
+<div class="bg-amber-500 text-slate-950 text-[11px] sm:text-xs font-semibold py-1.5 px-3 text-center no-print flex items-center justify-center gap-1.5">
+  <i data-lucide="shield-alert" class="w-3.5 h-3.5 flex-shrink-0"></i>
+  <span class="truncate">DEMO PROTOTYPE: Simulated figures (₹) — Not actual business records.</span>
+</div>
+
+<!-- MOBILE SLIDE-OVER DRAWER MENU -->
+<div id="mobile-drawer-overlay" onclick="toggleMobileDrawer(false)" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden lg:hidden no-print"></div>
+<aside id="mobile-drawer" class="fixed top-0 left-0 bottom-0 w-72 bg-slate-900 text-slate-200 z-50 transform -translate-x-full transition-transform duration-200 ease-in-out flex flex-col lg:hidden no-print">
+  <div class="p-4 flex items-center justify-between border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-sky-500 flex items-center justify-center text-white font-bold">GE</div>
+      <div>
+        <div class="font-bold text-white text-sm">Geet Enterprise</div>
+        <div class="text-[11px] text-slate-400">Finance & Loan ERP</div>
+      </div>
+    </div>
+    <button onclick="toggleMobileDrawer(false)" class="p-2 text-slate-400 hover:text-white rounded-lg">
+      <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+  </div>
+
+  <nav class="flex-1 py-3 overflow-y-auto text-sm space-y-1">
+    <div class="px-4 py-1.5 text-[11px] font-semibold text-slate-500 uppercase">Overview</div>
+    <button onclick="switchView('dashboard')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-left">
+      <i data-lucide="layout-dashboard" class="w-4 h-4 text-sky-400"></i> Executive Dashboard
+    </button>
+
+    <div class="px-4 pt-4 pb-1.5 text-[11px] font-semibold text-slate-500 uppercase">Financial Reports</div>
+    <button onclick="switchView('pnl')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-left">
+      <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i> Profit & Loss Report
+    </button>
+    <button onclick="switchView('upcoming-emi')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-left">
+      <i data-lucide="calendar-clock" class="w-4 h-4 text-sky-400"></i> Upcoming EMI Report
+    </button>
+    <button onclick="switchView('delayed-emi')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-left">
+      <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-400"></i> Delayed EMI Report
+    </button>
+    <button onclick="switchView('expense-report')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-left">
+      <i data-lucide="receipt" class="w-4 h-4 text-amber-400"></i> Expense Report
+    </button>
+
+    <div class="px-4 pt-4 pb-1.5 text-[11px] font-semibold text-slate-500 uppercase">Expense Management</div>
+    <button onclick="switchView('add-expense')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-left">
+      <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400"></i> Add New Expense
+    </button>
+    <button onclick="switchView('categories')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-left">
+      <i data-lucide="tags" class="w-4 h-4 text-purple-400"></i> Expense Categories
+    </button>
+  </nav>
+
+<!-- MODAL: RECORD EMI PAYMENT -->
+<div id="modal-record-payment" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 class="font-bold text-slate-900 text-base">Record EMI Payment</h3>
+        <p class="text-xs text-slate-500">Update borrower installment status & ledger</p>
+      </div>
+      <button onclick="closePaymentModal()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <form id="form-record-payment" onsubmit="handleRecordPayment(event)" class="p-5 space-y-4">
+      <input type="hidden" id="pay-emi-id" value="" />
+      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-1.5">
+        <div class="flex justify-between"><span class="text-slate-500">Borrower:</span><span id="pay-customer-name" class="font-bold text-slate-800"></span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Loan ID:</span><span id="pay-loan-id" class="font-semibold text-slate-800"></span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Total EMI Due:</span><span id="pay-emi-due" class="font-bold text-rose-600"></span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Already Paid:</span><span id="pay-already-paid" class="font-medium text-emerald-600"></span></div>
+        <div class="flex justify-between border-t border-slate-200 pt-1.5"><span class="text-slate-500">Remaining Installment Due:</span><span id="pay-remaining-due" class="font-extrabold text-slate-900"></span></div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Payment Received (₹) <span class="text-rose-500">*</span></label>
+        <input type="number" inputmode="decimal" id="pay-amount-input" step="1" min="1" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500" />
+      </div>
+      <div class="flex justify-end gap-2.5 pt-2">
+        <button type="button" onclick="closePaymentModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium">Cancel</button>
+        <button type="submit" id="pay-submit-btn" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-bold shadow-xs">Save Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: ADD NEW LOAN / EMI -->
+<div id="modal-add-loan" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 class="font-bold text-slate-900 text-base">Add New Loan / EMI Account</h3>
+        <p class="text-xs text-slate-500">Register borrower repayment schedule</p>
+      </div>
+      <button onclick="closeAddLoanModal()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <form id="form-add-loan" onsubmit="handleAddLoan(event)" class="p-5 space-y-3.5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Loan ID <span class="text-rose-500">*</span></label>
+          <input type="text" id="loan-input-id" required placeholder="e.g. LN-2026-170" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sky-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Customer / Entity Name <span class="text-rose-500">*</span></label>
+          <input type="text" id="loan-input-customer" required placeholder="e.g. Suresh Enterprises" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sky-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Contact Phone</label>
+          <input type="tel" id="loan-input-phone" placeholder="e.g. +919876543210" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sky-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Due Date <span class="text-rose-500">*</span></label>
+          <input type="date" id="loan-input-duedate" required value="2026-11-15" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sky-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Installment Info <span class="text-rose-500">*</span></label>
+          <input type="text" id="loan-input-inst" required placeholder="e.g. 1 / 24" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sky-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">EMI Amount (₹) <span class="text-rose-500">*</span></label>
+          <input type="number" id="loan-input-emiamt" min="1" required placeholder="e.g. 28000" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sky-500" />
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Loan Outstanding (₹) <span class="text-rose-500">*</span></label>
+          <input type="number" id="loan-input-outstanding" min="1" required placeholder="e.g. 672000" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-sky-500" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <button type="button" onclick="closeAddLoanModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium">Cancel</button>
+        <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold shadow-xs">Register Loan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+  <div class="p-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+    <div>
+      <div class="font-semibold text-white">Rajesh Sharma</div>
+      <div>Authorized Admin</div>
+    </div>
+    <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded">FY 26-27</span>
+  </div>
+</aside>
+
+<div class="flex min-h-screen">
+  <!-- DESKTOP SIDEBAR (Hidden on Mobile, Visible on lg+) -->
+  <aside class="hidden lg:flex w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex-col no-print">
+    <div class="p-5 flex items-center gap-3 border-b border-slate-800">
+      <div class="w-9 h-9 rounded-lg bg-sky-500 flex items-center justify-center text-white font-bold text-lg">GE</div>
+      <div>
+        <h1 class="font-bold text-white leading-tight">Geet Enterprise</h1>
+        <p class="text-xs text-slate-400">Finance & Loan ERP</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 py-4 space-y-1 text-sm">
+      <div class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Overview</div>
+      <button onclick="switchView('dashboard')" id="nav-dashboard" class="sidebar-link active w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-800 transition">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+      </button>
+
+      <div class="px-4 pt-5 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Financial Reports</div>
+      <button onclick="switchView('pnl')" id="nav-pnl" class="sidebar-link w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-800 transition">
+        <i data-lucide="trending-up" class="w-4 h-4"></i> Profit & Loss Report
+      </button>
+      <button onclick="switchView('upcoming-emi')" id="nav-upcoming-emi" class="sidebar-link w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-800 transition">
+        <i data-lucide="calendar-clock" class="w-4 h-4"></i> Upcoming EMI Report
+      </button>
+      <button onclick="switchView('delayed-emi')" id="nav-delayed-emi" class="sidebar-link w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-800 transition">
+        <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-400"></i> Delayed EMI Report
+      </button>
+      <button onclick="switchView('expense-report')" id="nav-expense-report" class="sidebar-link w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-800 transition">
+        <i data-lucide="receipt" class="w-4 h-4"></i> Expense Report
+      </button>
+
+      <div class="px-4 pt-5 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Expense Management</div>
+      <button onclick="switchView('add-expense')" id="nav-add-expense" class="sidebar-link w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-800 transition">
+        <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400"></i> Add New Expense
+      </button>
+      <button onclick="switchView('categories')" id="nav-categories" class="sidebar-link w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-800 transition">
+        <i data-lucide="tags" class="w-4 h-4"></i> Expense Categories
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+      <div>
+        <div class="font-medium text-white">Rajesh Sharma</div>
+        <div>Admin • Authorized</div>
+      </div>
+      <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded">FY 26-27</span>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT WRAPPER -->
+  <main class="flex-1 flex flex-col min-w-0 print-full">
+
+    <!-- STICKY MOBILE-FIRST TOP APP BAR -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 px-3 sm:px-6 py-3 no-print">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <button onclick="toggleMobileDrawer(true)" class="lg:hidden p-2 -ml-1 rounded-lg text-slate-700 hover:bg-slate-100 active:bg-slate-200">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div class="min-w-0">
+            <h2 id="page-title" class="text-base sm:text-xl font-bold text-slate-900 truncate">Executive Dashboard</h2>
+            <p id="page-subtitle" class="text-[11px] sm:text-xs text-slate-500 truncate">Income, EMIs & Expense Overview</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <!-- LIVE SERVER CONNECTION BADGE -->
+          <div id="server-status-pill" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Connected to SQLite Backend">
+            <span id="server-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="server-status-text" class="hidden sm:inline">Server Live</span>
+          </div>
+
+          <!-- MANUAL LIVE SYNC BUTTON -->
+          <button onclick="refreshDataFromServer()" title="Sync live data from server" class="p-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-medium flex items-center gap-1.5">
+            <i data-lucide="refresh-cw" id="sync-icon" class="w-4 h-4 text-slate-600"></i>
+            <span class="hidden md:inline">Sync</span>
+          </button>
+          <button onclick="switchView('categories')" class="p-2 sm:px-3 sm:py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-medium flex items-center gap-1.5" title="Manage Categories">
+            <i data-lucide="tags" class="w-4 h-4 text-slate-600"></i>
+            <span class="hidden sm:inline">Categories</span>
+          </button>
+          <button onclick="switchView('add-expense')" class="bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Add Expense</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- HORIZONTAL SCROLLING QUICK-PILLS (Mobile-First Navigation) -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2.5 mt-2 border-t border-slate-100 lg:hidden">
+        <button onclick="switchView('dashboard')" id="pill-dashboard" class="pill-nav active whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">
+          Dashboard
+        </button>
+        <button onclick="switchView('pnl')" id="pill-pnl" class="pill-nav whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">
+          P&L Report
+        </button>
+        <button onclick="switchView('upcoming-emi')" id="pill-upcoming-emi" class="pill-nav whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">
+          Upcoming EMI
+        </button>
+        <button onclick="switchView('delayed-emi')" id="pill-delayed-emi" class="pill-nav whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">
+          Delayed EMI
+        </button>
+        <button onclick="switchView('expense-report')" id="pill-expense-report" class="pill-nav whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">
+          Expense Report
+        </button>
+        <button onclick="switchView('categories')" id="pill-categories" class="pill-nav whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">
+          Categories
+        </button>
+      </div>
+    </header>
+
+    <!-- TOAST FEEDBACK -->
+    <div id="toast" class="hidden fixed bottom-20 lg:bottom-6 right-4 left-4 sm:left-auto z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs sm:text-sm">
+      <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+      <span id="toast-msg" class="font-medium">Action completed</span>
+    </div>
+
+    <!-- MAIN SCROLLABLE BODY -->
+    <div class="p-3 sm:p-6 space-y-4 sm:space-y-6 flex-1">
+
+      <!-- ==========================================
+           VIEW 1: MOBILE-FIRST DASHBOARD
+           ========================================== -->
+      <section id="view-dashboard" class="space-y-4 sm:space-y-6">
+        <!-- Mobile 2-Col / Desktop 5-Col KPI Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
+          <div onclick="switchView('pnl')" class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs active:scale-[0.99] transition cursor-pointer">
+            <div class="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+              <span>TOTAL INCOME</span>
+              <i data-lucide="indian-rupee" class="w-3.5 h-3.5 text-emerald-600"></i>
+            </div>
+            <div id="dash-total-income" class="text-base sm:text-xl font-bold text-slate-900 mt-1">₹0</div>
+            <div id="dash-interest-sub" class="text-[11px] text-emerald-600 font-medium mt-0.5 truncate">Int: ₹0</div>
+          </div>
+
+          <div onclick="switchView('expense-report')" class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs active:scale-[0.99] transition cursor-pointer">
+            <div class="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+              <span>EXPENSES</span>
+              <i data-lucide="wallet" class="w-3.5 h-3.5 text-rose-600"></i>
+            </div>
+            <div id="dash-total-expense" class="text-base sm:text-xl font-bold text-slate-900 mt-1">₹0</div>
+            <div class="text-[11px] text-slate-500 mt-0.5 truncate">9 Categories</div>
+          </div>
+
+          <div onclick="switchView('pnl')" class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs active:scale-[0.99] transition cursor-pointer">
+            <div class="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+              <span>NET PROFIT</span>
+              <i data-lucide="trending-up" class="w-3.5 h-3.5 text-sky-600"></i>
+            </div>
+            <div id="dash-net-profit" class="text-base sm:text-xl font-bold text-emerald-600 mt-1">₹0</div>
+            <div id="dash-profit-margin" class="text-[11px] text-slate-500 mt-0.5">Margin: 0%</div>
+          </div>
+
+          <div onclick="switchView('upcoming-emi')" class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs active:scale-[0.99] transition cursor-pointer">
+            <div class="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+              <span>UPCOMING EMI</span>
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-sky-600"></i>
+            </div>
+            <div id="dash-upcoming-emi" class="text-base sm:text-xl font-bold text-slate-900 mt-1">₹0</div>
+            <div id="dash-upcoming-count" class="text-[11px] text-sky-600 font-medium mt-0.5">0 due</div>
+          </div>
+
+          <div onclick="switchView('delayed-emi')" class="col-span-2 lg:col-span-1 bg-rose-50/70 p-3.5 sm:p-4 rounded-xl border border-rose-200 shadow-2xs active:scale-[0.99] transition cursor-pointer flex lg:block items-center justify-between">
+            <div>
+              <div class="flex items-center gap-1.5 text-[11px] text-rose-700 font-bold">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i>
+                <span>OVERDUE EMIs</span>
+              </div>
+              <div id="dash-overdue-count" class="text-[11px] text-rose-600 mt-0.5">0 accounts delayed</div>
+            </div>
+            <div id="dash-overdue-emi" class="text-lg sm:text-xl font-extrabold text-rose-600 lg:mt-1">₹0</div>
+          </div>
+        </div>
+
+        <!-- Charts Stack (Mobile 1-col, Desktop 3-col) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div class="lg:col-span-2 bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-2xs">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm sm:text-base">Monthly Profit vs. Expenses</h3>
+                <p class="text-[11px] text-slate-500">6-Month comparison (₹)</p>
+              </div>
+              <button onclick="switchView('pnl')" class="text-xs text-sky-600 font-semibold">P&L →</button>
+            </div>
+            <div class="h-56 sm:h-64">
+              <canvas id="chartProfitVsExpense"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-2xs">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm sm:text-base">Category-Wise Expenses</h3>
+                <p class="text-[11px] text-slate-500">Share by operational head</p>
+              </div>
+              <button onclick="switchView('expense-report')" class="text-xs text-sky-600 font-semibold">Ledger →</button>
+            </div>
+            <div class="h-56 sm:h-64 flex items-center justify-center">
+              <canvas id="chartCategoryDonut"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts Stack (Overdue First on Mobile for Priority Action) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <!-- Overdue EMI Alerts -->
+          <div class="bg-white rounded-xl border border-rose-200 shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 bg-rose-50/50 border-b border-rose-100 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Overdue EMI Alerts</h3>
+              </div>
+              <button onclick="switchView('delayed-emi')" class="text-xs text-rose-600 font-semibold">View All →</button>
+            </div>
+            <div id="dash-overdue-alerts" class="divide-y divide-slate-100 text-xs sm:text-sm"></div>
+          </div>
+
+          <!-- Upcoming EMI Alerts -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Upcoming EMI Alerts</h3>
+              </div>
+              <button onclick="switchView('upcoming-emi')" class="text-xs text-sky-600 font-semibold">View All →</button>
+            </div>
+            <div id="dash-upcoming-alerts" class="divide-y divide-slate-100 text-xs sm:text-sm"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 2: PROFIT & LOSS REPORT
+           ========================================== -->
+      <section id="view-pnl" class="hidden space-y-4 sm:space-y-6">
+        <!-- Mobile-First Filter Card -->
+        <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 no-print">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase text-slate-500 flex items-center gap-1.5">
+              <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Filter & Export P&L
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="exportPnLCSV()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
+              </button>
+              <button onclick="window.print()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">From Month</label>
+              <select id="pnl-start-month" onchange="renderPnLReport()" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 text-xs sm:text-sm bg-white">
+                <option value="2026-05">May 2026</option>
+                <option value="2026-06">Jun 2026</option>
+                <option value="2026-07">Jul 2026</option>
+                <option value="2026-08">Aug 2026</option>
+                <option value="2026-09">Sep 2026</option>
+                <option value="2026-10">Oct 2026</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">To Month</label>
+              <select id="pnl-end-month" onchange="renderPnLReport()" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 text-xs sm:text-sm bg-white">
+                <option value="2026-05">May 2026</option>
+                <option value="2026-06">Jun 2026</option>
+                <option value="2026-07">Jul 2026</option>
+                <option value="2026-08">Aug 2026</option>
+                <option value="2026-09">Sep 2026</option>
+                <option value="2026-10" selected>Oct 2026</option>
+              </select>
+            </div>
+            <div class="col-span-2 sm:col-span-1">
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Search Month</label>
+              <input type="text" id="pnl-search" oninput="renderPnLReport()" placeholder="e.g. Oct, Sep..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs sm:text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2x2 Summary KPI Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+            <div class="text-[11px] text-slate-500 font-semibold">TOTAL INCOME</div>
+            <div id="pnl-card-income" class="text-base sm:text-xl font-bold text-slate-900 mt-1">₹0</div>
+          </div>
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+            <div class="text-[11px] text-slate-500 font-semibold">INTEREST INCOME</div>
+            <div id="pnl-card-interest" class="text-base sm:text-xl font-bold text-sky-600 mt-1">₹0</div>
+          </div>
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+            <div class="text-[11px] text-slate-500 font-semibold">TOTAL EXPENSES</div>
+            <div id="pnl-card-expense" class="text-base sm:text-xl font-bold text-rose-600 mt-1">₹0</div>
+          </div>
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+            <div class="text-[11px] text-slate-500 font-semibold">NET PROFIT</div>
+            <div id="pnl-card-net" class="text-base sm:text-xl font-bold text-emerald-600 mt-1">₹0</div>
+          </div>
+        </div>
+
+        <!-- MOBILE CARD LIST (< md) -->
+        <div id="pnl-mobile-cards" class="md:hidden space-y-2.5"></div>
+
+        <!-- DESKTOP TABLE (md+) -->
+        <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-sm">Monthly Profit & Loss Comparison</h3>
+            <span class="text-xs text-slate-500">Live synced with Expense Ledger</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+                <tr>
+                  <th class="px-5 py-3">Month</th>
+                  <th class="px-5 py-3 text-right">Interest Income</th>
+                  <th class="px-5 py-3 text-right">Fee Income</th>
+                  <th class="px-5 py-3 text-right">Total Income</th>
+                  <th class="px-5 py-3 text-right">Expenses</th>
+                  <th class="px-5 py-3 text-right">Net Profit</th>
+                  <th class="px-5 py-3 text-center">MoM</th>
+                </tr>
+              </thead>
+              <tbody id="pnl-table-body" class="divide-y divide-slate-200"></tbody>
+              <tfoot id="pnl-table-foot" class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300"></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 3: UPCOMING EMI REPORT
+           ========================================== -->
+      <section id="view-upcoming-emi" class="hidden space-y-4 sm:space-y-6">
+        <!-- Filter Bar -->
+        <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 no-print">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase text-slate-500 flex items-center gap-1.5">
+              <i data-lucide="filter" class="w-3.5 h-3.5"></i> Upcoming EMI Filters
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="exportEMICSV('upcoming')" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
+              </button>
+              <button onclick="window.print()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">From Date</label>
+              <input type="date" id="up-start-date" value="2026-10-01" onchange="renderUpcomingEMI()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">To Date</label>
+              <input type="date" id="up-end-date" value="2026-11-30" onchange="renderUpcomingEMI()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Status</label>
+              <select id="up-status-filter" onchange="renderUpcomingEMI()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm bg-white">
+                <option value="ALL">All Statuses</option>
+                <option value="Upcoming" selected>Upcoming</option>
+                <option value="Partially Paid">Partially Paid</option>
+                <option value="Paid">Paid</option>
+                <option value="Overdue">Overdue</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Customer / Loan ID</label>
+              <input type="text" id="up-search" oninput="renderUpcomingEMI()" placeholder="Search..." class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-4">
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200">
+            <div class="text-[10px] sm:text-xs text-slate-500 font-semibold">INSTALLMENTS</div>
+            <div id="up-card-count" class="text-base sm:text-xl font-bold text-slate-900 mt-1">0</div>
+          </div>
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200">
+            <div class="text-[10px] sm:text-xs text-slate-500 font-semibold">SCHEDULED EMI</div>
+            <div id="up-card-scheduled" class="text-base sm:text-xl font-bold text-sky-600 mt-1">₹0</div>
+          </div>
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200">
+            <div class="text-[10px] sm:text-xs text-slate-500 font-semibold">TO COLLECT</div>
+            <div id="up-card-collection" class="text-base sm:text-xl font-bold text-emerald-600 mt-1">₹0</div>
+          </div>
+        </div>
+
+        <!-- MOBILE CARDS (< md) -->
+        <div id="up-mobile-cards" class="md:hidden space-y-2.5"></div>
+
+        <!-- DESKTOP TABLE (md+) -->
+        <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+                <tr>
+                  <th class="px-5 py-3">Due Date</th>
+                  <th class="px-5 py-3">Loan ID & Customer</th>
+                  <th class="px-5 py-3">Installment</th>
+                  <th class="px-5 py-3 text-right">EMI Amount</th>
+                  <th class="px-5 py-3 text-right">Paid</th>
+                  <th class="px-5 py-3 text-right">Collection Due</th>
+                  <th class="px-5 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="up-table-body" class="divide-y divide-slate-200"></tbody>
+              <tfoot id="up-table-foot" class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300"></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 4: DELAYED EMI REPORT
+           ========================================== -->
+      <section id="view-delayed-emi" class="hidden space-y-4 sm:space-y-6">
+        <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 no-print">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase text-rose-600 flex items-center gap-1.5">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Overdue Recovery Filters
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="exportEMICSV('delayed')" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
+              </button>
+              <button onclick="window.print()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Due From</label>
+              <input type="date" id="del-start-date" value="2026-08-01" onchange="renderDelayedEMI()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Due To</label>
+              <input type="date" id="del-end-date" value="2026-10-29" onchange="renderDelayedEMI()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Status</label>
+              <select id="del-status-filter" onchange="renderDelayedEMI()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm bg-white">
+                <option value="DELINQUENT" selected>All Delayed</option>
+                <option value="Overdue">Strictly Overdue</option>
+                <option value="Partially Paid">Partially Paid</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Search Borrower</label>
+              <input type="text" id="del-search" oninput="renderDelayedEMI()" placeholder="Name / Phone / ID..." class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-4">
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-rose-200">
+            <div class="text-[10px] sm:text-xs text-rose-700 font-semibold">OVERDUE AMT</div>
+            <div id="del-card-overdue" class="text-base sm:text-xl font-bold text-rose-600 mt-1">₹0</div>
+          </div>
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200">
+            <div class="text-[10px] sm:text-xs text-slate-500 font-semibold">AVG DELAY</div>
+            <div id="del-card-days" class="text-base sm:text-xl font-bold text-amber-600 mt-1">0 Days</div>
+          </div>
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200">
+            <div class="text-[10px] sm:text-xs text-slate-500 font-semibold">OUTSTANDING</div>
+            <div id="del-card-outstanding" class="text-base sm:text-xl font-bold text-slate-900 mt-1">₹0</div>
+          </div>
+        </div>
+
+        <!-- MOBILE CARDS (< md) with Click-to-Call -->
+        <div id="del-mobile-cards" class="md:hidden space-y-2.5"></div>
+
+        <!-- DESKTOP TABLE (md+) -->
+        <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+                <tr>
+                  <th class="px-5 py-3">Due Date</th>
+                  <th class="px-5 py-3">Customer Details</th>
+                  <th class="px-5 py-3 text-center">Days Delayed</th>
+                  <th class="px-5 py-3 text-right">EMI Amount</th>
+                  <th class="px-5 py-3 text-right">Overdue Amount</th>
+                  <th class="px-5 py-3 text-right">Loan Outstanding</th>
+                  <th class="px-5 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="del-table-body" class="divide-y divide-slate-200"></tbody>
+              <tfoot id="del-table-foot" class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300"></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 5: EXPENSE REPORT
+           ========================================== -->
+      <section id="view-expense-report" class="hidden space-y-4 sm:space-y-6">
+        <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 no-print">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase text-slate-500 flex items-center gap-1.5">
+              <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Expense Report Filters
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="exportExpenseCSV()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
+              </button>
+              <button onclick="window.print()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold flex items-center gap-1">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">From Date</label>
+              <input type="date" id="exp-start-date" value="2026-05-01" onchange="renderExpenseReport()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">To Date</label>
+              <input type="date" id="exp-end-date" value="2026-10-31" onchange="renderExpenseReport()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Category</label>
+              <select id="exp-category-filter" onchange="renderExpenseReport()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm bg-white"></select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-1">Search Keyword</label>
+              <input type="text" id="exp-search" oninput="renderExpenseReport()" placeholder="Title / Notes..." class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Breakdown & Monthly Comparison -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+              <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Category-Wise Breakdown</h3>
+              <span id="exp-total-badge" class="text-xs font-bold bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full">Total: ₹0</span>
+            </div>
+            <div class="p-3.5 max-h-60 overflow-y-auto">
+              <table class="w-full text-xs sm:text-sm">
+                <thead class="text-[11px] text-slate-500 uppercase border-b">
+                  <tr>
+                    <th class="pb-2 text-left">Category</th>
+                    <th class="pb-2 text-center">Txns</th>
+                    <th class="pb-2 text-right">Amount</th>
+                    <th class="pb-2 text-right">Share</th>
+                  </tr>
+                </thead>
+                <tbody id="exp-cat-breakdown" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-200">
+              <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Monthly Expense Comparison</h3>
+            </div>
+            <div class="p-3.5 max-h-60 overflow-y-auto">
+              <table class="w-full text-xs sm:text-sm">
+                <thead class="text-[11px] text-slate-500 uppercase border-b">
+                  <tr>
+                    <th class="pb-2 text-left">Month</th>
+                    <th class="pb-2 text-center">Txns</th>
+                    <th class="pb-2 text-right">Total Expense</th>
+                    <th class="pb-2 text-right">vs Prev</th>
+                  </tr>
+                </thead>
+                <tbody id="exp-month-comparison" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MOBILE EXPENSE TRANSACTION CARDS (< md) -->
+        <div class="md:hidden space-y-2.5">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Date-Wise Transactions</h3>
+            <button onclick="switchView('add-expense')" class="text-xs text-sky-600 font-bold">+ Add New</button>
+          </div>
+          <div id="exp-mobile-cards" class="space-y-2.5"></div>
+        </div>
+
+        <!-- DESKTOP EXPENSE TABLE (md+) -->
+        <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-sm">Date-Wise Expense Transactions</h3>
+            <button onclick="switchView('add-expense')" class="text-xs bg-sky-50 text-sky-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-sky-100">+ Add Expense</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+                <tr>
+                  <th class="px-5 py-3">Date</th>
+                  <th class="px-5 py-3">Title & Description</th>
+                  <th class="px-5 py-3">Category</th>
+                  <th class="px-5 py-3">Payment Mode</th>
+                  <th class="px-5 py-3">Receipt</th>
+                  <th class="px-5 py-3 text-right">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="exp-table-body" class="divide-y divide-slate-200"></tbody>
+              <tfoot id="exp-table-foot" class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300"></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 6: ADD EXPENSE FORM (Mobile-First Touch Inputs)
+           ========================================== -->
+      <section id="view-add-expense" class="hidden max-w-2xl mx-auto">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div class="p-4 sm:px-6 sm:py-5 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base sm:text-lg">Add Operational Expense</h3>
+              <p class="text-xs text-slate-500">Updates Expense Report & P&L Statement in real time.</p>
+            </div>
+            <button onclick="switchView('categories')" class="text-xs text-sky-600 font-semibold whitespace-nowrap">Categories →</button>
+          </div>
+
+          <form id="form-add-expense" onsubmit="handleAddExpense(event)" novalidate class="p-4 sm:p-6 space-y-4">
+            <div id="form-feedback" class="hidden p-3.5 rounded-xl text-xs sm:text-sm font-medium"></div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Expense Title <span class="text-rose-500">*</span></label>
+                <input type="text" id="input-exp-title" placeholder="e.g. October Office Electricity Bill" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-sky-500" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Expense Category <span class="text-rose-500">*</span></label>
+                <select id="input-exp-category" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:border-sky-500"></select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Amount (₹) <span class="text-rose-500">*</span></label>
+                <input type="number" inputmode="decimal" id="input-exp-amount" min="1" step="0.01" placeholder="e.g. 4500" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-sky-500" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Expense Date <span class="text-rose-500">*</span></label>
+                <input type="date" id="input-exp-date" value="2026-10-29" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-sky-500" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Payment Method <span class="text-rose-500">*</span></label>
+                <select id="input-exp-method" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:border-sky-500">
+                  <option value="">-- Select Payment Mode --</option>
+                  <option value="UPI / Corporate Scan">UPI / Corporate Scan</option>
+                  <option value="NEFT / RTGS">NEFT / RTGS</option>
+                  <option value="Corporate Credit Card">Corporate Credit Card</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Petty Cash">Petty Cash</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Receipt Upload <span class="text-slate-400 font-normal">(Optional Photo/PDF)</span></label>
+                <input type="file" id="input-exp-receipt" accept="image/*,.pdf" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700" />
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Description / Vendor Notes <span class="text-rose-500">*</span></label>
+                <textarea id="input-exp-desc" rows="3" placeholder="Enter vendor name, bill number, or authorization remark..." class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-sky-500"></textarea>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
+              <button type="button" onclick="document.getElementById('form-add-expense').reset()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold">Clear Form</button>
+              <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-sm font-bold shadow-xs">Save Expense Record</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           VIEW 7: EXPENSE CATEGORIES MANAGEMENT
+           ========================================== -->
+      <section id="view-categories" class="hidden space-y-4 sm:space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <!-- Add / Edit Category Card -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-2xs p-4 sm:p-5 h-fit">
+            <h3 id="cat-form-title" class="font-bold text-slate-900 text-base mb-1">Add Expense Category</h3>
+            <p class="text-xs text-slate-500 mb-4">Authorized admins can add, edit, or deactivate categories.</p>
+
+            <form id="form-category" onsubmit="handleSaveCategory(event)" class="space-y-3.5">
+              <input type="hidden" id="cat-edit-id" value="" />
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Category Name <span class="text-rose-500">*</span></label>
+                <input type="text" id="cat-name" required placeholder="e.g. Legal & Recovery" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Monthly Guideline (₹)</label>
+                <input type="number" inputmode="numeric" id="cat-budget" min="0" placeholder="e.g. 20000" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Description</label>
+                <textarea id="cat-desc" rows="2" placeholder="Approved expense items..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm"></textarea>
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button type="submit" id="cat-submit-btn" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm py-2.5 rounded-xl">Save Category</button>
+                <button type="button" id="cat-cancel-btn" onclick="resetCategoryForm()" class="hidden px-4 py-2.5 border border-slate-300 rounded-xl text-sm font-medium text-slate-600">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Categories List (Mobile Cards + Desktop Table) -->
+          <div class="lg:col-span-2 space-y-2.5">
+            <!-- Mobile Category Cards -->
+            <div id="cat-mobile-cards" class="md:hidden space-y-2.5"></div>
+
+            <!-- Desktop Category Table -->
+            <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm">Configured Expense Categories</h3>
+                <p class="text-xs text-slate-500">Deactivated categories cannot be chosen for new expenses.</p>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                  <thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+                    <tr>
+                      <th class="px-5 py-3">Category</th>
+                      <th class="px-5 py-3 text-right">Monthly Guideline</th>
+                      <th class="px-5 py-3 text-right">Total Spent</th>
+                      <th class="px-5 py-3 text-center">Status</th>
+                      <th class="px-5 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cat-table-body" class="divide-y divide-slate-200"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- STICKY MOBILE BOTTOM NAVIGATION BAR (Hidden on lg+) -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-30 flex items-center justify-around py-1.5 px-1 lg:hidden no-print shadow-lg">
+  <button onclick="switchView('dashboard')" id="bnav-dashboard" class="bottom-nav-link active flex flex-col items-center justify-center py-1 px-2 text-slate-500">
+    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+    <span class="text-[10px] mt-0.5">Home</span>
+  </button>
+  <button onclick="switchView('pnl')" id="bnav-pnl" class="bottom-nav-link flex flex-col items-center justify-center py-1 px-2 text-slate-500">
+    <i data-lucide="trending-up" class="w-5 h-5"></i>
+    <span class="text-[10px] mt-0.5">P&L</span>
+  </button>
+  <button onclick="switchView('add-expense')" id="bnav-add-expense" class="flex flex-col items-center justify-center -mt-5">
+    <div class="w-12 h-12 rounded-full bg-sky-600 text-white shadow-md flex items-center justify-center border-4 border-white">
+      <i data-lucide="plus" class="w-6 h-6"></i>
+    </div>
+    <span class="text-[10px] font-semibold text-sky-700 mt-0.5">Add Exp</span>
+  </button>
+  <button onclick="switchView('delayed-emi')" id="bnav-delayed-emi" class="bottom-nav-link flex flex-col items-center justify-center py-1 px-2 text-slate-500 relative">
+    <span class="absolute top-0.5 right-3 w-2 h-2 rounded-full bg-rose-500"></span>
+    <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+    <span class="text-[10px] mt-0.5">EMIs</span>
+  </button>
+  <button onclick="switchView('expense-report')" id="bnav-expense-report" class="bottom-nav-link flex flex-col items-center justify-center py-1 px-2 text-slate-500">
+    <i data-lucide="receipt" class="w-5 h-5"></i>
+    <span class="text-[10px] mt-0.5">Expenses</span>
+  </button>
+</nav>
+
+
+<script>
+  // ==========================================
+  // 1. DYNAMIC SERVER-CONNECTED DATA STORE
+  // ==========================================
+  const TODAY_REF = new Date('2026-10-29');
+
+  // Reactive application state
+  let expenseCategories = [];
+  let monthlyRevenueData = [];
+  let expenses = [];
+  let emiRecords = [];
+  let isServerOnline = false;
+
+  // Utilities
+  function formatINR(num) {
+    const n = Number(num) || 0;
+    const sign = n < 0 ? '-' : '';
+    return sign + '₹' + Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  }
+
+  function getCategoryById(id) {
+    return expenseCategories.find(c => c.id === id) || { name: 'Uncategorized', active: false };
+  }
+
+  function getStatusBadge(status) {
+    const styles = {
+      'Upcoming': 'bg-sky-50 text-sky-700 border-sky-200',
+      'Paid': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'Overdue': 'bg-rose-50 text-rose-700 border-rose-200',
+      'Partially Paid': 'bg-amber-50 text-amber-700 border-amber-200'
+    };
+    const cls = styles[status] || 'bg-slate-100 text-slate-700 border-slate-200';
+    return `<span class="px-2 py-0.5 text-[11px] font-bold rounded-full border ${cls}">${status}</span>`;
+  }
+
+  function calculateDaysDelayed(dueDateStr) {
+    const due = new Date(dueDateStr);
+    const diff = Math.floor((TODAY_REF - due) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 0;
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3500);
+  }
+
+  function updateServerBadge(online, text) {
+    isServerOnline = online;
+    const pill = document.getElementById('server-status-pill');
+    const dot = document.getElementById('server-status-dot');
+    const label = document.getElementById('server-status-text');
+
+    if (!pill || !dot || !label) return;
+
+    if (online) {
+      pill.className = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200';
+      dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+      label.textContent = text || 'Server Live';
+    } else {
+      pill.className = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer';
+      dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+      label.textContent = text || 'Offline Mode';
+      pill.onclick = refreshDataFromServer;
+    }
+  }
+
+  function downloadCSV(filename, rows) {
+    const csvContent = rows.map(r => r.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${filename}`);
+  }
+
+  function toggleMobileDrawer(open) {
+    const drawer = document.getElementById('mobile-drawer');
+    const overlay = document.getElementById('mobile-drawer-overlay');
+    if (open) {
+      drawer.classList.remove('-translate-x-full');
+      overlay.classList.remove('hidden');
+    } else {
+      drawer.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    }
+  }
+
+  // ==========================================
+  // 2. SERVER DATA LOADER & SYNCHRONIZER
+  // ==========================================
+  async function loadDataFromServer() {
+    try {
+      const res = await fetch('/api/initial-data');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      if (json.success && json.data) {
+        expenseCategories = json.data.categories || [];
+        monthlyRevenueData = json.data.monthlyRevenue || [];
+        expenses = json.data.expenses || [];
+        emiRecords = json.data.emis || [];
+        updateServerBadge(true, 'Server Live');
+        return true;
+      }
+      throw new Error(json.error || 'Invalid server payload');
+    } catch (err) {
+      console.warn('Backend server not reachable or error:', err.message);
+      updateServerBadge(false, 'Offline Mode');
+      return false;
+    }
+  }
+
+  async function refreshDataFromServer() {
+    const syncIcon = document.getElementById('sync-icon');
+    if (syncIcon) syncIcon.classList.add('animate-spin');
+
+    const success = await loadDataFromServer();
+    populateCategoryDropdowns();
+    populatePnLMonthDropdowns();
+    refreshAllViews();
+
+    if (syncIcon) {
+      setTimeout(() => syncIcon.classList.remove('animate-spin'), 600);
+    }
+    if (success) {
+      showToast('Live data synced with SQLite backend');
+    } else {
+      showToast('Server sync failed - working with local data');
+    }
+  }
+
+  // ==========================================
+  // 3. VIEW CONTROLLER
+  // ==========================================
+  const viewMetadata = {
+    'dashboard': { title: 'Executive Dashboard', subtitle: 'Income, EMIs & Expense Overview' },
+    'pnl': { title: 'Profit & Loss Report', subtitle: 'Income, interest, expenses & net profit' },
+    'upcoming-emi': { title: 'Upcoming EMI Report', subtitle: 'Scheduled installments & collections' },
+    'delayed-emi': { title: 'Delayed EMI Report', subtitle: 'Overdue accounts & recovery tracking' },
+    'expense-report': { title: 'Expense Report', subtitle: 'Category breakdown & date-wise ledger' },
+    'add-expense': { title: 'Add New Expense', subtitle: 'Record operational expenditure' },
+    'categories': { title: 'Expense Categories', subtitle: 'Add, edit, or deactivate categories' }
+  };
+
+  let currentActiveView = 'dashboard';
+
+  function switchView(viewId) {
+    currentActiveView = viewId;
+    toggleMobileDrawer(false);
+    document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+    const targetSec = document.getElementById(`view-${viewId}`);
+    if (targetSec) targetSec.classList.remove('hidden');
+
+    // Desktop Sidebar
+    document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
+    const sideBtn = document.getElementById(`nav-${viewId}`);
+    if (sideBtn) sideBtn.classList.add('active');
+
+    // Mobile Top Pills
+    document.querySelectorAll('.pill-nav').forEach(btn => btn.classList.remove('active'));
+    const pillBtn = document.getElementById(`pill-${viewId}`);
+    if (pillBtn) {
+      pillBtn.classList.add('active');
+      pillBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
+    // Mobile Bottom Bar
+    document.querySelectorAll('.bottom-nav-link').forEach(btn => btn.classList.remove('active'));
+    const bnavId = (viewId === 'upcoming-emi') ? 'bnav-delayed-emi' : `bnav-${viewId}`;
+    const bnavBtn = document.getElementById(bnavId);
+    if (bnavBtn) bnavBtn.classList.add('active');
+
+    if (viewMetadata[viewId]) {
+      document.getElementById('page-title').textContent = viewMetadata[viewId].title;
+      document.getElementById('page-subtitle').textContent = viewMetadata[viewId].subtitle;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    refreshAllViews();
+  }
+
+  // ==========================================
+  // 4. DASHBOARD RENDERER
+  // ==========================================
+  let profitExpenseChartInstance = null;
+  let categoryDonutChartInstance = null;
+
+  function renderDashboard() {
+    const totalInterest = monthlyRevenueData.reduce((acc, m) => acc + Number(m.interestIncome || 0), 0);
+    const totalFees = monthlyRevenueData.reduce((acc, m) => acc + Number(m.feeIncome || 0), 0);
+    const totalIncome = totalInterest + totalFees;
+    const totalExpense = expenses.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+    const netProfit = totalIncome - totalExpense;
+    const margin = totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0;
+
+    const elTotalInc = document.getElementById('dash-total-income');
+    const elIntSub = document.getElementById('dash-interest-sub');
+    const elTotalExp = document.getElementById('dash-total-expense');
+    const elNetProf = document.getElementById('dash-net-profit');
+    const elMargin = document.getElementById('dash-profit-margin');
+
+    if (elTotalInc) elTotalInc.textContent = formatINR(totalIncome);
+    if (elIntSub) elIntSub.textContent = `Int: ${formatINR(totalInterest)}`;
+    if (elTotalExp) elTotalExp.textContent = formatINR(totalExpense);
+    if (elNetProf) elNetProf.textContent = formatINR(netProfit);
+    if (elMargin) elMargin.textContent = `Margin: ${margin}%`;
+
+    const upcomingList = emiRecords.filter(r => r.status === 'Upcoming');
+    const upcomingTotal = upcomingList.reduce((s, r) => s + (Number(r.emiAmount) - Number(r.paidAmount)), 0);
+    const elUpEmi = document.getElementById('dash-upcoming-emi');
+    const elUpCount = document.getElementById('dash-upcoming-count');
+    if (elUpEmi) elUpEmi.textContent = formatINR(upcomingTotal);
+    if (elUpCount) elUpCount.textContent = `${upcomingList.length} due next`;
+
+    const delayedList = emiRecords.filter(r => r.status === 'Overdue' || r.status === 'Partially Paid');
+    const overdueTotal = delayedList.reduce((s, r) => s + (Number(r.emiAmount) - Number(r.paidAmount)), 0);
+    const elOverEmi = document.getElementById('dash-overdue-emi');
+    const elOverCount = document.getElementById('dash-overdue-count');
+    if (elOverEmi) elOverEmi.textContent = formatINR(overdueTotal);
+    if (elOverCount) elOverCount.textContent = `${delayedList.length} accounts delayed`;
+
+    const elUpAlerts = document.getElementById('dash-upcoming-alerts');
+    if (elUpAlerts) {
+      elUpAlerts.innerHTML = upcomingList.slice(0, 4).map(r => `
+        <div class="p-3.5 flex items-center justify-between gap-2 hover:bg-slate-50 transition">
+          <div class="min-w-0">
+            <div class="font-semibold text-slate-800 truncate">${r.customer}</div>
+            <div class="text-[11px] text-slate-500">${r.loanId} • Due ${r.dueDate}</div>
+          </div>
+          <div class="text-right flex-shrink-0 flex items-center gap-2">
+            <div>
+              <div class="font-bold text-slate-900">${formatINR(r.emiAmount)}</div>
+              ${getStatusBadge(r.status)}
+            </div>
+            <button onclick="openPaymentModal('${r.id}')" class="px-2 py-1 rounded bg-sky-50 text-sky-700 font-semibold text-xs border border-sky-200 hover:bg-sky-100">Collect</button>
+          </div>
+        </div>
+      `).join('') || '<div class="p-4 text-center text-xs text-slate-400">No upcoming EMIs scheduled</div>';
+    }
+
+    const elOverAlerts = document.getElementById('dash-overdue-alerts');
+    if (elOverAlerts) {
+      elOverAlerts.innerHTML = delayedList.map(r => {
+        const overdueAmt = Number(r.emiAmount) - Number(r.paidAmount);
+        const days = calculateDaysDelayed(r.dueDate);
+        return `
+          <div class="p-3.5 flex items-center justify-between gap-2 hover:bg-rose-50/30 transition">
+            <div class="min-w-0">
+              <div class="font-semibold text-slate-800 truncate">${r.customer}</div>
+              <div class="text-[11px] text-rose-600 font-semibold">${days}d delayed • ${r.loanId}</div>
+            </div>
+            <div class="text-right flex-shrink-0 flex items-center gap-2">
+              <div>
+                <div class="font-bold text-rose-600">${formatINR(overdueAmt)}</div>
+                ${getStatusBadge(r.status)}
+              </div>
+              <button onclick="openPaymentModal('${r.id}')" class="px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-semibold text-xs border border-emerald-200 hover:bg-emerald-100">Collect</button>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="p-4 text-center text-xs text-emerald-600">Zero overdue accounts 🎉</div>';
+    }
+
+    renderDashboardCharts();
+  }
+
+  function renderDashboardCharts() {
+    const canvas1 = document.getElementById('chartProfitVsExpense');
+    if (!canvas1) return;
+    const ctx1 = canvas1.getContext('2d');
+
+    const labels = monthlyRevenueData.map(m => (m.label || m.monthKey).replace(' 2026', ''));
+    const expenseSeries = monthlyRevenueData.map(m =>
+      expenses.filter(e => e.date.startsWith(m.monthKey)).reduce((s, e) => s + Number(e.amount), 0)
+    );
+    const profitSeries = monthlyRevenueData.map((m, idx) =>
+      (Number(m.interestIncome) + Number(m.feeIncome)) - expenseSeries[idx]
+    );
+
+    if (profitExpenseChartInstance) profitExpenseChartInstance.destroy();
+    profitExpenseChartInstance = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Net Profit', data: profitSeries, backgroundColor: '#10b981', borderRadius: 5 },
+          { label: 'Expenses', data: expenseSeries, backgroundColor: '#f43f5e', borderRadius: 5 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } },
+        scales: { y: { ticks: { font: { size: 10 }, callback: val => '₹' + (val / 1000) + 'k' } } }
+      }
+    });
+
+    const canvas2 = document.getElementById('chartCategoryDonut');
+    if (!canvas2) return;
+    const ctx2 = canvas2.getContext('2d');
+
+    const catTotals = {};
+    expenses.forEach(e => {
+      const cname = getCategoryById(e.categoryId).name;
+      catTotals[cname] = (catTotals[cname] || 0) + Number(e.amount);
+    });
+
+    if (categoryDonutChartInstance) categoryDonutChartInstance.destroy();
+    categoryDonutChartInstance = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(catTotals),
+        datasets: [{
+          data: Object.values(catTotals),
+          backgroundColor: ['#0284c7', '#6366f1', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316', '#64748b']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+      }
+    });
+  }
+
+  // ==========================================
+  // 5. PROFIT & LOSS REPORT
+  // ==========================================
+  function populatePnLMonthDropdowns() {
+    const startSel = document.getElementById('pnl-start-month');
+    const endSel = document.getElementById('pnl-end-month');
+    if (!startSel || !endSel) return;
+
+    const curStart = startSel.value;
+    const curEnd = endSel.value;
+
+    const opts = monthlyRevenueData.map(m => `<option value="${m.monthKey}">${m.label || m.monthKey}</option>`).join('');
+    startSel.innerHTML = opts;
+    endSel.innerHTML = opts;
+
+    if (monthlyRevenueData.length > 0) {
+      startSel.value = curStart && monthlyRevenueData.some(m => m.monthKey === curStart) ? curStart : monthlyRevenueData[0].monthKey;
+      endSel.value = curEnd && monthlyRevenueData.some(m => m.monthKey === curEnd) ? curEnd : monthlyRevenueData[monthlyRevenueData.length - 1].monthKey;
+    }
+  }
+
+  function getFilteredPnLRows() {
+    const startM = document.getElementById('pnl-start-month')?.value || '2026-05';
+    const endM = document.getElementById('pnl-end-month')?.value || '2026-10';
+    const q = (document.getElementById('pnl-search')?.value || '').trim().toLowerCase();
+
+    let prevNet = null;
+    const computed = monthlyRevenueData.map(m => {
+      const totalInc = Number(m.interestIncome) + Number(m.feeIncome);
+      const monthExp = expenses.filter(e => e.date.startsWith(m.monthKey)).reduce((s, e) => s + Number(e.amount), 0);
+      const net = totalInc - monthExp;
+      let momText = '—';
+      let momPositive = true;
+      if (prevNet !== null && prevNet !== 0) {
+        const pct = (((net - prevNet) / Math.abs(prevNet)) * 100).toFixed(1);
+        momPositive = pct >= 0;
+        momText = (pct >= 0 ? '+' : '') + pct + '%';
+      }
+      prevNet = net;
+      return { ...m, totalInc, monthExp, net, momText, momPositive };
+    });
+
+    return computed.filter(row => row.monthKey >= startM && row.monthKey <= endM && (!q || (row.label && row.label.toLowerCase().includes(q)) || row.monthKey.includes(q)));
+  }
+
+  function renderPnLReport() {
+    const rows = getFilteredPnLRows();
+    let sumInt = 0, sumFee = 0, sumInc = 0, sumExp = 0, sumNet = 0;
+
+    rows.forEach(r => {
+      sumInt += Number(r.interestIncome);
+      sumFee += Number(r.feeIncome);
+      sumInc += Number(r.totalInc);
+      sumExp += Number(r.monthExp);
+      sumNet += Number(r.net);
+    });
+
+    const cInc = document.getElementById('pnl-card-income');
+    const cInt = document.getElementById('pnl-card-interest');
+    const cExp = document.getElementById('pnl-card-expense');
+    const cNet = document.getElementById('pnl-card-net');
+
+    if (cInc) cInc.textContent = formatINR(sumInc);
+    if (cInt) cInt.textContent = formatINR(sumInt);
+    if (cExp) cExp.textContent = formatINR(sumExp);
+    if (cNet) cNet.textContent = formatINR(sumNet);
+
+    const mCards = document.getElementById('pnl-mobile-cards');
+    if (mCards) {
+      mCards.innerHTML = rows.map(r => `
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2.5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span class="font-bold text-slate-900 text-sm">${r.label || r.monthKey}</span>
+            <span class="px-2 py-0.5 rounded text-xs font-bold ${r.momText === '—' ? 'bg-slate-100 text-slate-500' : (r.momPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700')}">
+              MoM: ${r.momText}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <div class="text-slate-400">Total Income</div>
+              <div class="font-bold text-slate-800">${formatINR(r.totalInc)}</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Interest Income</div>
+              <div class="font-semibold text-sky-600">${formatINR(r.interestIncome)}</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Operating Expenses</div>
+              <div class="font-semibold text-rose-600">${formatINR(r.monthExp)}</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Net Profit / Loss</div>
+              <div class="font-extrabold ${r.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(r.net)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('') || '<div class="p-4 text-center text-xs text-slate-400">No records found for date filter</div>';
+    }
+
+    const tBody = document.getElementById('pnl-table-body');
+    if (tBody) {
+      tBody.innerHTML = rows.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-5 py-3.5 font-semibold text-slate-800">${r.label || r.monthKey}</td>
+          <td class="px-5 py-3.5 text-right text-sky-700 font-medium">${formatINR(r.interestIncome)}</td>
+          <td class="px-5 py-3.5 text-right text-slate-600">${formatINR(r.feeIncome)}</td>
+          <td class="px-5 py-3.5 text-right font-semibold text-slate-900">${formatINR(r.totalInc)}</td>
+          <td class="px-5 py-3.5 text-right text-rose-600 font-medium">${formatINR(r.monthExp)}</td>
+          <td class="px-5 py-3.5 text-right font-bold ${r.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatINR(r.net)}</td>
+          <td class="px-5 py-3.5 text-center">
+            <span class="px-2 py-0.5 rounded text-xs font-semibold ${r.momText === '—' ? 'text-slate-400' : (r.momPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700')}">${r.momText}</span>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="7" class="px-5 py-4 text-center text-slate-400">No P&L data for selected range</td></tr>';
+    }
+
+    const tFoot = document.getElementById('pnl-table-foot');
+    if (tFoot) {
+      tFoot.innerHTML = `
+        <tr>
+          <td class="px-5 py-3.5">TOTAL (${rows.length} Months)</td>
+          <td class="px-5 py-3.5 text-right">${formatINR(sumInt)}</td>
+          <td class="px-5 py-3.5 text-right">${formatINR(sumFee)}</td>
+          <td class="px-5 py-3.5 text-right">${formatINR(sumInc)}</td>
+          <td class="px-5 py-3.5 text-right text-rose-700">${formatINR(sumExp)}</td>
+          <td class="px-5 py-3.5 text-right text-emerald-700">${formatINR(sumNet)}</td>
+          <td></td>
+        </tr>
+      `;
+    }
+  }
+
+  function exportPnLCSV() {
+    const rows = getFilteredPnLRows();
+    const csv = [['Month', 'Interest Income', 'Fee Income', 'Total Income', 'Total Expenses', 'Net Profit', 'MoM Change']];
+    rows.forEach(r => csv.push([r.label, r.interestIncome, r.feeIncome, r.totalInc, r.monthExp, r.net, r.momText]));
+    downloadCSV('Geet_Enterprise_PnL_Report.csv', csv);
+  }
+
+  // ==========================================
+  // 6. UPCOMING EMI REPORT
+  // ==========================================
+  function getFilteredUpcomingEMIs() {
+    const start = document.getElementById('up-start-date')?.value || '';
+    const end = document.getElementById('up-end-date')?.value || '';
+    const status = document.getElementById('up-status-filter')?.value || 'ALL';
+    const q = (document.getElementById('up-search')?.value || '').trim().toLowerCase();
+
+    return emiRecords.filter(r => {
+      const inDate = (!start || r.dueDate >= start) && (!end || r.dueDate <= end);
+      const matchStatus = status === 'ALL' || r.status === status;
+      const matchQ = !q || r.customer.toLowerCase().includes(q) || r.loanId.toLowerCase().includes(q) || (r.phone && r.phone.includes(q));
+      return inDate && matchStatus && matchQ;
+    });
+  }
+
+  function renderUpcomingEMI() {
+    const list = getFilteredUpcomingEMIs();
+    let sumEMI = 0, sumPaid = 0, sumCollect = 0;
+
+    list.forEach(r => {
+      sumEMI += Number(r.emiAmount);
+      sumPaid += Number(r.paidAmount);
+      sumCollect += (Number(r.emiAmount) - Number(r.paidAmount));
+    });
+
+    const cCount = document.getElementById('up-card-count');
+    const cSched = document.getElementById('up-card-scheduled');
+    const cColl = document.getElementById('up-card-collection');
+    if (cCount) cCount.textContent = list.length;
+    if (cSched) cSched.textContent = formatINR(sumEMI);
+    if (cColl) cColl.textContent = formatINR(sumCollect);
+
+    // Mobile Cards
+    const mCards = document.getElementById('up-mobile-cards');
+    if (mCards) {
+      mCards.innerHTML = list.map(r => {
+        const toCollect = Number(r.emiAmount) - Number(r.paidAmount);
+        return `
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-bold text-slate-900 text-sm">${r.customer}</div>
+                <div class="text-xs text-slate-500">${r.loanId} • Inst ${r.installmentNo}</div>
+              </div>
+              ${getStatusBadge(r.status)}
+            </div>
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs">
+              <div>
+                <div class="text-slate-400">Due Date</div>
+                <div class="font-semibold text-slate-800">${r.dueDate}</div>
+              </div>
+              <div>
+                <div class="text-slate-400">EMI Amt</div>
+                <div class="font-semibold text-slate-800">${formatINR(r.emiAmount)}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-slate-400">To Collect</div>
+                <div class="font-extrabold text-emerald-600">${formatINR(toCollect)}</div>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-500">${r.phone || 'No phone'}</span>
+              <button onclick="openPaymentModal('${r.id}')" class="px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 font-semibold text-xs border border-sky-200 hover:bg-sky-100 flex items-center gap-1">
+                Record Payment
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="p-4 text-center text-xs text-slate-400">No upcoming EMIs found</div>';
+    }
+
+    // Desktop Table
+    const tBody = document.getElementById('up-table-body');
+    if (tBody) {
+      tBody.innerHTML = list.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-5 py-3.5 font-medium text-slate-800">${r.dueDate}</td>
+          <td class="px-5 py-3.5">
+            <div class="font-semibold text-slate-800">${r.customer}</div>
+            <div class="text-xs text-slate-500">${r.loanId} • ${r.phone || '—'}</div>
+          </td>
+          <td class="px-5 py-3.5 text-slate-600">${r.installmentNo}</td>
+          <td class="px-5 py-3.5 text-right font-medium">${formatINR(r.emiAmount)}</td>
+          <td class="px-5 py-3.5 text-right text-emerald-600">${formatINR(r.paidAmount)}</td>
+          <td class="px-5 py-3.5 text-right font-bold text-slate-900">${formatINR(Number(r.emiAmount) - Number(r.paidAmount))}</td>
+          <td class="px-5 py-3.5 text-center">${getStatusBadge(r.status)}</td>
+          <td class="px-5 py-3.5 text-center">
+            <button onclick="openPaymentModal('${r.id}')" class="px-3 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
+              Collect
+            </button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="8" class="px-5 py-4 text-center text-slate-400">No installments found</td></tr>';
+    }
+
+    const tFoot = document.getElementById('up-table-foot');
+    if (tFoot) {
+      tFoot.innerHTML = `
+        <tr>
+          <td colspan="3" class="px-5 py-3.5">TOTAL (${list.length} Installments)</td>
+          <td class="px-5 py-3.5 text-right">${formatINR(sumEMI)}</td>
+          <td class="px-5 py-3.5 text-right text-emerald-700">${formatINR(sumPaid)}</td>
+          <td class="px-5 py-3.5 text-right text-sky-700">${formatINR(sumCollect)}</td>
+          <td colspan="2"></td>
+        </tr>
+      `;
+    }
+  }
+
+  // ==========================================
+  // 7. DELAYED EMI REPORT
+  // ==========================================
+  function getFilteredDelayedEMIs() {
+    const start = document.getElementById('del-start-date')?.value || '';
+    const end = document.getElementById('del-end-date')?.value || '';
+    const status = document.getElementById('del-status-filter')?.value || 'DELINQUENT';
+    const q = (document.getElementById('del-search')?.value || '').trim().toLowerCase();
+
+    return emiRecords.filter(r => {
+      const isDelinquent = r.status === 'Overdue' || r.status === 'Partially Paid';
+      if (!isDelinquent) return false;
+      const inDate = (!start || r.dueDate >= start) && (!end || r.dueDate <= end);
+      const matchStatus = status === 'DELINQUENT' || r.status === status;
+      const matchQ = !q || r.customer.toLowerCase().includes(q) || r.loanId.toLowerCase().includes(q) || (r.phone && r.phone.toLowerCase().includes(q));
+      return inDate && matchStatus && matchQ;
+    });
+  }
+
+  function renderDelayedEMI() {
+    const list = getFilteredDelayedEMIs();
+    let sumEMI = 0, sumOverdue = 0, sumOutstanding = 0, totalDays = 0;
+
+    list.forEach(r => {
+      sumEMI += Number(r.emiAmount);
+      sumOverdue += (Number(r.emiAmount) - Number(r.paidAmount));
+      sumOutstanding += Number(r.outstandingLoan);
+      totalDays += calculateDaysDelayed(r.dueDate);
+    });
+
+    const avgDays = list.length ? Math.round(totalDays / list.length) : 0;
+    const cOverdue = document.getElementById('del-card-overdue');
+    const cDays = document.getElementById('del-card-days');
+    const cOut = document.getElementById('del-card-outstanding');
+
+    if (cOverdue) cOverdue.textContent = formatINR(sumOverdue);
+    if (cDays) cDays.textContent = `${avgDays} Days`;
+    if (cOut) cOut.textContent = formatINR(sumOutstanding);
+
+    // Mobile Cards with Click-to-Call & Payment Action
+    const mCards = document.getElementById('del-mobile-cards');
+    if (mCards) {
+      mCards.innerHTML = list.map(r => {
+        const overdueAmt = Number(r.emiAmount) - Number(r.paidAmount);
+        const days = calculateDaysDelayed(r.dueDate);
+        return `
+          <div class="bg-white p-4 rounded-xl border border-rose-200 shadow-2xs space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-bold text-slate-900 text-sm">${r.customer}</div>
+                <div class="text-xs text-slate-500">${r.loanId} • Due: ${r.dueDate}</div>
+              </div>
+              <span class="px-2 py-0.5 bg-rose-100 text-rose-800 font-bold text-xs rounded-md">${days}d Delayed</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs">
+              <div>
+                <div class="text-slate-400">Overdue Amt</div>
+                <div class="font-extrabold text-rose-600">${formatINR(overdueAmt)}</div>
+              </div>
+              <div>
+                <div class="text-slate-400">Loan Balance</div>
+                <div class="font-semibold text-slate-800">${formatINR(r.outstandingLoan)}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-slate-400">Status</div>
+                <div class="mt-0.5">${getStatusBadge(r.status)}</div>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+              <span class="text-xs text-slate-500">${r.phone}</span>
+              <div class="flex items-center gap-2">
+                <button onclick="openPaymentModal('${r.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 shadow-2xs">
+                  Collect
+                </button>
+                ${r.phone ? `<a href="tel:${r.phone}" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 font-semibold text-xs flex items-center gap-1">Call</a>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="p-4 text-center text-xs text-emerald-600">No overdue accounts in this filter</div>';
+    }
+
+    // Desktop Table
+    const tBody = document.getElementById('del-table-body');
+    if (tBody) {
+      tBody.innerHTML = list.map(r => {
+        const overdueAmt = Number(r.emiAmount) - Number(r.paidAmount);
+        const days = calculateDaysDelayed(r.dueDate);
+        return `
+          <tr class="hover:bg-rose-50/30">
+            <td class="px-5 py-3.5 font-medium text-slate-800">${r.dueDate}</td>
+            <td class="px-5 py-3.5">
+              <div class="font-semibold text-slate-800">${r.customer}</div>
+              <div class="text-xs text-slate-500">${r.loanId} • ${r.phone || '—'}</div>
+            </td>
+            <td class="px-5 py-3.5 text-center">
+              <span class="px-2.5 py-1 bg-rose-100 text-rose-800 font-bold text-xs rounded-md">${days} Days</span>
+            </td>
+            <td class="px-5 py-3.5 text-right text-slate-600">${formatINR(r.emiAmount)}</td>
+            <td class="px-5 py-3.5 text-right font-bold text-rose-600">${formatINR(overdueAmt)}</td>
+            <td class="px-5 py-3.5 text-right font-medium text-slate-900">${formatINR(r.outstandingLoan)}</td>
+            <td class="px-5 py-3.5 text-center">${getStatusBadge(r.status)}</td>
+            <td class="px-5 py-3.5 text-center">
+              <button onclick="openPaymentModal('${r.id}')" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs">
+                Collect
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="8" class="px-5 py-4 text-center text-slate-400">No delayed loans found</td></tr>';
+    }
+
+    const tFoot = document.getElementById('del-table-foot');
+    if (tFoot) {
+      tFoot.innerHTML = `
+        <tr>
+          <td colspan="2" class="px-5 py-3.5">TOTAL (${list.length} Delayed Accounts)</td>
+          <td class="px-5 py-3.5 text-center">Avg: ${avgDays} Days</td>
+          <td class="px-5 py-3.5 text-right">${formatINR(sumEMI)}</td>
+          <td class="px-5 py-3.5 text-right text-rose-700">${formatINR(sumOverdue)}</td>
+          <td class="px-5 py-3.5 text-right">${formatINR(sumOutstanding)}</td>
+          <td colspan="2"></td>
+        </tr>
+      `;
+    }
+  }
+
+  function exportEMICSV(mode) {
+    const list = mode === 'upcoming' ? getFilteredUpcomingEMIs() : getFilteredDelayedEMIs();
+    const rows = [['Due Date', 'Loan ID', 'Customer', 'Phone', 'Installment', 'EMI Amount', 'Paid', 'Overdue/Balance', 'Days Delayed', 'Loan Outstanding', 'Status']];
+    list.forEach(r => rows.push([r.dueDate, r.loanId, r.customer, r.phone, r.installmentNo, r.emiAmount, r.paidAmount, (Number(r.emiAmount) - Number(r.paidAmount)), calculateDaysDelayed(r.dueDate), r.outstandingLoan, r.status]));
+    downloadCSV(`Geet_Enterprise_${mode}_EMI_Report.csv`, rows);
+  }
+
+  // ==========================================
+  // 8. EXPENSE REPORT
+  // ==========================================
+  function populateCategoryDropdowns() {
+    const filterSel = document.getElementById('exp-category-filter');
+    if (filterSel) {
+      const currentFilterVal = filterSel.value || 'ALL';
+      filterSel.innerHTML = `<option value="ALL">All Categories</option>` +
+        expenseCategories.map(c => `<option value="${c.id}">${c.name}${c.active ? '' : ' (Inactive)'}</option>`).join('');
+      filterSel.value = currentFilterVal;
+    }
+
+    const formSel = document.getElementById('input-exp-category');
+    if (formSel) {
+      formSel.innerHTML = `<option value="">-- Select Expense Category --</option>` +
+        expenseCategories.filter(c => c.active).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+  }
+
+  function getFilteredExpenses() {
+    const start = document.getElementById('exp-start-date')?.value || '';
+    const end = document.getElementById('exp-end-date')?.value || '';
+    const catId = document.getElementById('exp-category-filter')?.value || 'ALL';
+    const q = (document.getElementById('exp-search')?.value || '').trim().toLowerCase();
+
+    return expenses
+      .filter(e => {
+        const inDate = (!start || e.date >= start) && (!end || e.date <= end);
+        const matchCat = !catId || catId === 'ALL' || e.categoryId === catId;
+        const matchQ = !q || e.title.toLowerCase().includes(q) || (e.desc && e.desc.toLowerCase().includes(q)) || (e.method && e.method.toLowerCase().includes(q));
+        return inDate && matchCat && matchQ;
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  function renderExpenseReport() {
+    const list = getFilteredExpenses();
+    const totalAmt = list.reduce((s, e) => s + Number(e.amount), 0);
+    const badge = document.getElementById('exp-total-badge');
+    if (badge) badge.textContent = `Total: ${formatINR(totalAmt)}`;
+
+    // Category Breakdown
+    const catMap = {};
+    list.forEach(e => {
+      if (!catMap[e.categoryId]) catMap[e.categoryId] = { count: 0, amount: 0 };
+      catMap[e.categoryId].count++;
+      catMap[e.categoryId].amount += Number(e.amount);
+    });
+
+    const catRows = Object.entries(catMap).sort((a, b) => b[1].amount - a[1].amount);
+    const catEl = document.getElementById('exp-cat-breakdown');
+    if (catEl) {
+      catEl.innerHTML = catRows.map(([cid, data]) => {
+        const cat = getCategoryById(cid);
+        const pct = totalAmt > 0 ? ((data.amount / totalAmt) * 100).toFixed(1) : 0;
+        return `
+          <tr>
+            <td class="py-2 font-medium text-slate-800">${cat.name}</td>
+            <td class="py-2 text-center text-slate-500">${data.count}</td>
+            <td class="py-2 text-right font-semibold text-slate-900">${formatINR(data.amount)}</td>
+            <td class="py-2 text-right text-slate-500">${pct}%</td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="4" class="py-4 text-center text-slate-400">No records</td></tr>`;
+    }
+
+    // Monthly Comparison
+    const monthMap = {};
+    list.forEach(e => {
+      const mKey = e.date.slice(0, 7);
+      if (!monthMap[mKey]) monthMap[mKey] = { count: 0, amount: 0 };
+      monthMap[mKey].count++;
+      monthMap[mKey].amount += Number(e.amount);
+    });
+
+    const sortedMonths = Object.keys(monthMap).sort();
+    let prevM = null;
+    const mCompEl = document.getElementById('exp-month-comparison');
+    if (mCompEl) {
+      mCompEl.innerHTML = sortedMonths.map(mKey => {
+        const d = monthMap[mKey];
+        let diffHtml = '<span class="text-slate-400">—</span>';
+        if (prevM !== null && prevM > 0) {
+          const pct = (((d.amount - prevM) / prevM) * 100).toFixed(1);
+          const cls = pct > 0 ? 'text-rose-600' : 'text-emerald-600';
+          diffHtml = `<span class="font-semibold ${cls}">${pct > 0 ? '+' : ''}${pct}%</span>`;
+        }
+        prevM = d.amount;
+        return `
+          <tr>
+            <td class="py-2 font-medium text-slate-800">${mKey}</td>
+            <td class="py-2 text-center text-slate-500">${d.count}</td>
+            <td class="py-2 text-right font-semibold text-slate-900">${formatINR(d.amount)}</td>
+            <td class="py-2 text-right">${diffHtml}</td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="4" class="py-4 text-center text-slate-400">No monthly data</td></tr>`;
+    }
+
+    // Helper for receipt links
+    const renderReceiptLink = (receipt) => {
+      if (!receipt) return '<span class="text-slate-400 text-xs">None</span>';
+      return `<a href="/uploads/${receipt}" target="_blank" title="Click to view receipt" class="inline-flex items-center gap-1 text-sky-600 hover:text-sky-800 font-medium hover:underline text-xs bg-sky-50 px-2 py-0.5 rounded border border-sky-100">📎 ${receipt}</a>`;
+    };
+
+    // Mobile Cards
+    const mCards = document.getElementById('exp-mobile-cards');
+    if (mCards) {
+      mCards.innerHTML = list.map(e => {
+        const cat = getCategoryById(e.categoryId);
+        return `
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-bold">${cat.name}</span>
+                <span class="text-[11px] text-slate-400">${e.date}</span>
+              </div>
+              <div class="font-bold text-slate-800 text-sm truncate">${e.title}</div>
+              <div class="text-xs text-slate-500 truncate">${e.desc || ''} • ${e.method}</div>
+              ${e.receipt ? `<div class="pt-0.5">${renderReceiptLink(e.receipt)}</div>` : ''}
+            </div>
+            <div class="text-right flex-shrink-0 flex flex-col items-end gap-1">
+              <div class="font-extrabold text-slate-900 text-sm">${formatINR(e.amount)}</div>
+              <button onclick="deleteExpense('${e.id}')" title="Delete Expense" class="text-slate-400 hover:text-rose-600 p-1 text-xs">
+                <i data-lucide="trash-2" class="w-4 h-4 text-rose-500"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="p-4 text-center text-xs text-slate-400">No expense records found</div>';
+    }
+
+    // Desktop Table
+    const tBody = document.getElementById('exp-table-body');
+    if (tBody) {
+      tBody.innerHTML = list.map(e => {
+        const cat = getCategoryById(e.categoryId);
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="px-5 py-3.5 font-medium text-slate-700 whitespace-nowrap">${e.date}</td>
+            <td class="px-5 py-3.5">
+              <div class="font-semibold text-slate-800">${e.title}</div>
+              <div class="text-xs text-slate-500">${e.desc || '—'}</div>
+            </td>
+            <td class="px-5 py-3.5">
+              <span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">${cat.name}</span>
+            </td>
+            <td class="px-5 py-3.5 text-slate-600 text-xs">${e.method}</td>
+            <td class="px-5 py-3.5 text-xs">
+              ${renderReceiptLink(e.receipt)}
+            </td>
+            <td class="px-5 py-3.5 text-right font-bold text-slate-900">${formatINR(e.amount)}</td>
+            <td class="px-5 py-3.5 text-center">
+              <button onclick="deleteExpense('${e.id}')" title="Delete Expense" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition">
+                <i data-lucide="trash-2" class="w-4 h-4 text-rose-500"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="7" class="px-5 py-4 text-center text-slate-400">No expenses found</td></tr>';
+    }
+
+    const tFoot = document.getElementById('exp-table-foot');
+    if (tFoot) {
+      tFoot.innerHTML = `
+        <tr>
+          <td colspan="5" class="px-5 py-3.5">TOTAL EXPENSES (${list.length} Transactions)</td>
+          <td class="px-5 py-3.5 text-right text-rose-700">${formatINR(totalAmt)}</td>
+          <td></td>
+        </tr>
+      `;
+    }
+  }
+
+  function exportExpenseCSV() {
+    const list = getFilteredExpenses();
+    const rows = [['Expense ID', 'Date', 'Title', 'Category', 'Payment Method', 'Description', 'Receipt', 'Amount (INR)']];
+    list.forEach(e => rows.push([e.id, e.date, e.title, getCategoryById(e.categoryId).name, e.method, e.desc || '', e.receipt || 'N/A', e.amount]));
+    downloadCSV('Geet_Enterprise_Expense_Report.csv', rows);
+  }
+
+  // ==========================================
+  // 9. ADD EXPENSE FORM HANDLER (WITH BACKEND API & MULTIPART UPLOAD)
+  // ==========================================
+  async function handleAddExpense(event) {
+    event.preventDefault();
+    const title = document.getElementById('input-exp-title').value.trim();
+    const categoryId = document.getElementById('input-exp-category').value;
+    const amount = parseFloat(document.getElementById('input-exp-amount').value);
+    const date = document.getElementById('input-exp-date').value;
+    const method = document.getElementById('input-exp-method').value;
+    const desc = document.getElementById('input-exp-desc').value.trim();
+    const fileInput = document.getElementById('input-exp-receipt');
+
+    const feedback = document.getElementById('form-feedback');
+
+    if (!title || !categoryId || isNaN(amount) || amount <= 0 || !date || !method || !desc) {
+      feedback.className = 'p-3.5 rounded-xl text-xs sm:text-sm font-medium bg-rose-50 text-rose-700 border border-rose-200';
+      feedback.textContent = 'Please complete all required fields (*) including Category and valid Amount (₹).';
+      feedback.classList.remove('hidden');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('categoryId', categoryId);
+    formData.append('amount', amount);
+    formData.append('date', date);
+    formData.append('method', method);
+    formData.append('desc', desc);
+    if (fileInput.files.length > 0) {
+      formData.append('receiptFile', fileInput.files[0]);
+    }
+
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Server error while saving expense.');
+      }
+
+      // Add to local state
+      expenses.unshift(data.data);
+
+      const catObj = getCategoryById(categoryId);
+      feedback.className = 'p-3.5 rounded-xl text-xs sm:text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-200';
+      feedback.innerHTML = `✅ Saved <strong>${formatINR(amount)}</strong> under <strong>${catObj.name}</strong> to server. Ledger updated.`;
+      feedback.classList.remove('hidden');
+
+      document.getElementById('form-add-expense').reset();
+      document.getElementById('input-exp-date').value = '2026-10-29';
+      refreshAllViews();
+      showToast(`Saved ${formatINR(amount)} (${catObj.name})`);
+    } catch (err) {
+      console.error('Error adding expense:', err);
+      feedback.className = 'p-3.5 rounded-xl text-xs sm:text-sm font-medium bg-rose-50 text-rose-700 border border-rose-200';
+      feedback.textContent = 'Failed to save expense: ' + err.message;
+      feedback.classList.remove('hidden');
+    }
+  }
+
+  async function deleteExpense(id) {
+    if (!confirm('Are you sure you want to permanently delete this expense record?')) return;
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        expenses = expenses.filter(e => e.id !== id);
+        refreshAllViews();
+        showToast('Expense record deleted');
+      } else {
+        alert('Could not delete expense: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Network error deleting expense: ' + err.message);
+    }
+  }
+
+  // ==========================================
+  // 10. EXPENSE CATEGORIES MANAGEMENT
+  // ==========================================
+  function renderCategoriesPage() {
+    // Mobile Cards
+    const mCards = document.getElementById('cat-mobile-cards');
+    if (mCards) {
+      mCards.innerHTML = expenseCategories.map(c => {
+        const totalSpent = expenses.filter(e => e.categoryId === c.id).reduce((s, e) => s + Number(e.amount), 0);
+        return `
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="font-bold text-slate-900 text-sm">${c.name}</div>
+                <div class="text-xs text-slate-500">${c.desc || '—'}</div>
+              </div>
+              <span class="px-2 py-0.5 text-[11px] font-bold rounded-full ${c.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}">
+                ${c.active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+              <div>
+                <span class="text-slate-400">Guideline:</span> <span class="font-semibold">${formatINR(c.budget)}/mo</span>
+                <span class="mx-1 text-slate-300">|</span>
+                <span class="text-slate-400">Spent:</span> <span class="font-bold text-slate-900">${formatINR(totalSpent)}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <button onclick="editCategory('${c.id}')" class="font-semibold text-sky-600">Edit</button>
+                <button onclick="toggleCategoryStatus('${c.id}')" class="font-semibold ${c.active ? 'text-rose-600' : 'text-emerald-600'}">
+                  ${c.active ? 'Deactivate' : 'Activate'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="p-4 text-center text-xs text-slate-400">No categories found</div>';
+    }
+
+    // Desktop Table
+    const tBody = document.getElementById('cat-table-body');
+    if (tBody) {
+      tBody.innerHTML = expenseCategories.map(c => {
+        const totalSpent = expenses.filter(e => e.categoryId === c.id).reduce((s, e) => s + Number(e.amount), 0);
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="px-5 py-3.5">
+              <div class="font-semibold text-slate-800">${c.name}</div>
+              <div class="text-xs text-slate-500">${c.desc || '—'}</div>
+            </td>
+            <td class="px-5 py-3.5 text-right text-slate-600">${formatINR(c.budget)}/mo</td>
+            <td class="px-5 py-3.5 text-right font-bold text-slate-900">${formatINR(totalSpent)}</td>
+            <td class="px-5 py-3.5 text-center">
+              <span class="px-2.5 py-1 text-xs font-bold rounded-full ${c.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}">
+                ${c.active ? 'Active' : 'Inactive'}
+              </span>
+            </td>
+            <td class="px-5 py-3.5 text-right space-x-2">
+              <button onclick="editCategory('${c.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-sky-600 hover:bg-sky-50">Edit</button>
+              <button onclick="toggleCategoryStatus('${c.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold ${c.active ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}">
+                ${c.active ? 'Deactivate' : 'Activate'}
+              </button>
+              ${totalSpent === 0 ? `<button onclick="deleteCategory('${c.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50">Delete</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="5" class="px-5 py-4 text-center text-slate-400">No categories found</td></tr>';
+    }
+  }
+
+  function editCategory(id) {
+    const c = expenseCategories.find(item => item.id === id);
+    if (!c) return;
+
+    document.getElementById('cat-edit-id').value = c.id;
+    document.getElementById('cat-name').value = c.name;
+    document.getElementById('cat-budget').value = c.budget || '';
+    document.getElementById('cat-desc').value = c.desc || '';
+
+    document.getElementById('cat-form-title').textContent = 'Edit Category: ' + c.name;
+    document.getElementById('cat-submit-btn').textContent = 'Update Category';
+    document.getElementById('cat-cancel-btn').classList.remove('hidden');
+
+    // Scroll to form on mobile
+    document.getElementById('form-category').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function resetCategoryForm() {
+    document.getElementById('form-category').reset();
+    document.getElementById('cat-edit-id').value = '';
+    document.getElementById('cat-form-title').textContent = 'Add Expense Category';
+    document.getElementById('cat-submit-btn').textContent = 'Save Category';
+    document.getElementById('cat-cancel-btn').classList.add('hidden');
+  }
+
+  async function handleSaveCategory(event) {
+    event.preventDefault();
+    const editId = document.getElementById('cat-edit-id').value;
+    const name = document.getElementById('cat-name').value.trim();
+    const budget = parseFloat(document.getElementById('cat-budget').value) || 0;
+    const desc = document.getElementById('cat-desc').value.trim();
+
+    if (!name) {
+      alert('Category name is required.');
+      return;
+    }
+
+    try {
+      let res, data;
+      if (editId) {
+        res = await fetch(`/api/categories/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, budget, desc })
+        });
+        data = await res.json();
+        if (data.success) {
+          const idx = expenseCategories.findIndex(c => c.id === editId);
+          if (idx !== -1) expenseCategories[idx] = { ...expenseCategories[idx], ...data.data };
+          showToast(`Category '${name}' updated`);
+        }
+      } else {
+        res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, budget, desc, active: true })
+        });
+        data = await res.json();
+        if (data.success) {
+          expenseCategories.push(data.data);
+          showToast(`Added category '${name}'`);
+        }
+      }
+
+      resetCategoryForm();
+      populateCategoryDropdowns();
+      refreshAllViews();
+    } catch (err) {
+      alert('Error saving category: ' + err.message);
+    }
+  }
+
+  async function toggleCategoryStatus(id) {
+    try {
+      const res = await fetch(`/api/categories/${id}/toggle`, { method: 'PATCH' });
+      const data = await res.json();
+      if (data.success) {
+        const cat = expenseCategories.find(c => c.id === id);
+        if (cat) cat.active = data.data.active;
+        populateCategoryDropdowns();
+        refreshAllViews();
+        showToast(`Category ${data.data.name} is now ${data.data.active ? 'Active' : 'Inactive'}`);
+      }
+    } catch (err) {
+      alert('Error updating category: ' + err.message);
+    }
+  }
+
+  async function deleteCategory(id) {
+    if (!confirm('Are you sure you want to delete this category?')) return;
+    try {
+      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        expenseCategories = expenseCategories.filter(c => c.id !== id);
+        populateCategoryDropdowns();
+        refreshAllViews();
+        showToast(data.message || 'Category deleted');
+      } else {
+        alert(data.error || 'Could not delete category');
+      }
+    } catch (err) {
+      alert('Error deleting category: ' + err.message);
+    }
+  }
+
+  // ==========================================
+  // 11. EMI PAYMENT MODAL & ACTIONS
+  // ==========================================
+  function openPaymentModal(emiId) {
+    const emi = emiRecords.find(r => r.id === emiId);
+    if (!emi) return;
+
+    document.getElementById('pay-emi-id').value = emi.id;
+    document.getElementById('pay-customer-name').textContent = emi.customer;
+    document.getElementById('pay-loan-id').textContent = `${emi.loanId} (Inst ${emi.installmentNo})`;
+    document.getElementById('pay-emi-due').textContent = formatINR(emi.emiAmount);
+    document.getElementById('pay-already-paid').textContent = formatINR(emi.paidAmount);
+
+    const remaining = Number(emi.emiAmount) - Number(emi.paidAmount);
+    document.getElementById('pay-remaining-due').textContent = formatINR(remaining);
+    document.getElementById('pay-amount-input').value = remaining > 0 ? remaining : emi.emiAmount;
+    document.getElementById('pay-amount-input').max = remaining > 0 ? remaining : emi.emiAmount;
+
+    document.getElementById('modal-record-payment').classList.remove('hidden');
+    document.getElementById('pay-amount-input').focus();
+  }
+
+  function closePaymentModal() {
+    document.getElementById('modal-record-payment').classList.add('hidden');
+    document.getElementById('form-record-payment').reset();
+  }
+
+  async function handleRecordPayment(event) {
+    event.preventDefault();
+    const emiId = document.getElementById('pay-emi-id').value;
+    const amount = parseFloat(document.getElementById('pay-amount-input').value);
+
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid payment amount.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/emis/${emiId}/pay`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentAmount: amount })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const idx = emiRecords.findIndex(r => r.id === emiId);
+        if (idx !== -1) emiRecords[idx] = data.data;
+        closePaymentModal();
+        refreshAllViews();
+        showToast(`Recorded ${formatINR(amount)} payment for ${data.data.customer}`);
+      } else {
+        alert('Payment recording failed: ' + (data.error || 'Server error'));
+      }
+    } catch (err) {
+      alert('Error communicating with server: ' + err.message);
+    }
+  }
+
+  // ==========================================
+  // 12. ADD NEW LOAN / EMI MODAL
+  // ==========================================
+  function openAddLoanModal() {
+    const nextNum = emiRecords.length + 101;
+    document.getElementById('loan-input-id').value = `LN-2026-${nextNum}`;
+    document.getElementById('modal-add-loan').classList.remove('hidden');
+  }
+
+  function closeAddLoanModal() {
+    document.getElementById('modal-add-loan').classList.add('hidden');
+    document.getElementById('form-add-loan').reset();
+  }
+
+  async function handleAddLoan(event) {
+    event.preventDefault();
+    const loanId = document.getElementById('loan-input-id').value.trim();
+    const customer = document.getElementById('loan-input-customer').value.trim();
+    const phone = document.getElementById('loan-input-phone').value.trim();
+    const dueDate = document.getElementById('loan-input-duedate').value;
+    const installmentNo = document.getElementById('loan-input-inst').value.trim();
+    const emiAmount = parseFloat(document.getElementById('loan-input-emiamt').value);
+    const outstandingLoan = parseFloat(document.getElementById('loan-input-outstanding').value);
+
+    if (!loanId || !customer || !dueDate || !installmentNo || isNaN(emiAmount) || isNaN(outstandingLoan)) {
+      alert('Please fill all required loan fields.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/emis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loanId,
+          customer,
+          phone,
+          dueDate,
+          installmentNo,
+          emiAmount,
+          outstandingLoan,
+          paidAmount: 0,
+          status: 'Upcoming'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        emiRecords.push(data.data);
+        closeAddLoanModal();
+        refreshAllViews();
+        showToast(`New Loan ${loanId} registered for ${customer}`);
+      } else {
+        alert('Failed to register loan: ' + (data.error || 'Server error'));
+      }
+    } catch (err) {
+      alert('Error registering loan: ' + err.message);
+    }
+  }
+
+  // ==========================================
+  // 13. GLOBAL REFRESH & APP BOOTSTRAP
+  // ==========================================
+  function refreshAllViews() {
+    renderDashboard();
+    renderPnLReport();
+    renderUpcomingEMI();
+    renderDelayedEMI();
+    populateCategoryDropdowns();
+    renderExpenseReport();
+    renderCategoriesPage();
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
+
+  async function initApp() {
+    await loadDataFromServer();
+    populateCategoryDropdowns();
+    populatePnLMonthDropdowns();
+    switchView('dashboard');
+  }
+
+  window.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>

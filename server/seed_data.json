@@ -1,0 +1,585 @@
+{
+  "cats": [
+    {
+      "id": "cat-1",
+      "name": "Salary",
+      "budget": 185000,
+      "desc": "Monthly staff payroll, incentives & PF",
+      "active": true
+    },
+    {
+      "id": "cat-2",
+      "name": "Office Rent",
+      "budget": 45000,
+      "desc": "Head office lease & society maintenance",
+      "active": true
+    },
+    {
+      "id": "cat-3",
+      "name": "Electricity",
+      "budget": 12000,
+      "desc": "Commercial power utility bills",
+      "active": true
+    },
+    {
+      "id": "cat-4",
+      "name": "Internet",
+      "budget": 4500,
+      "desc": "Leased line fiber & backup broadband",
+      "active": true
+    },
+    {
+      "id": "cat-5",
+      "name": "Travel",
+      "budget": 18000,
+      "desc": "Field recovery visits & client verification",
+      "active": true
+    },
+    {
+      "id": "cat-6",
+      "name": "Marketing",
+      "budget": 25000,
+      "desc": "Local print ads, pamphlets & digital campaigns",
+      "active": true
+    },
+    {
+      "id": "cat-7",
+      "name": "Software",
+      "budget": 15000,
+      "desc": "Cloud ERP, SMS gateway & CIBIL API subscriptions",
+      "active": true
+    },
+    {
+      "id": "cat-8",
+      "name": "Maintenance",
+      "budget": 8000,
+      "desc": "AC servicing, office cleaning & hardware repair",
+      "active": true
+    },
+    {
+      "id": "cat-9",
+      "name": "Miscellaneous",
+      "budget": 6000,
+      "desc": "Pantry, stationery & NACH courier charges",
+      "active": true
+    }
+  ],
+  "revs": [
+    {
+      "monthKey": "2026-05",
+      "label": "May 2026",
+      "interestIncome": 410000,
+      "feeIncome": 38000
+    },
+    {
+      "monthKey": "2026-06",
+      "label": "Jun 2026",
+      "interestIncome": 425000,
+      "feeIncome": 41000
+    },
+    {
+      "monthKey": "2026-07",
+      "label": "Jul 2026",
+      "interestIncome": 438000,
+      "feeIncome": 36000
+    },
+    {
+      "monthKey": "2026-08",
+      "label": "Aug 2026",
+      "interestIncome": 452000,
+      "feeIncome": 44000
+    },
+    {
+      "monthKey": "2026-09",
+      "label": "Sep 2026",
+      "interestIncome": 468000,
+      "feeIncome": 47000
+    },
+    {
+      "monthKey": "2026-10",
+      "label": "Oct 2026",
+      "interestIncome": 485000,
+      "feeIncome": 52000
+    }
+  ],
+  "exps": [
+    {
+      "id": "EXP-101",
+      "date": "2026-05-05",
+      "title": "May Staff Payroll Disbursement",
+      "categoryId": "cat-1",
+      "amount": 180000,
+      "method": "NEFT / RTGS",
+      "desc": "Salary for 7 employees",
+      "receipt": "payroll_may26.pdf"
+    },
+    {
+      "id": "EXP-102",
+      "date": "2026-05-07",
+      "title": "Commercial Office Lease - May",
+      "categoryId": "cat-2",
+      "amount": 45000,
+      "method": "NEFT / RTGS",
+      "desc": "Unit 402, Business Plaza",
+      "receipt": "rent_may26.pdf"
+    },
+    {
+      "id": "EXP-103",
+      "date": "2026-05-14",
+      "title": "Power Utility Bill",
+      "categoryId": "cat-3",
+      "amount": 11200,
+      "method": "UPI / Corporate Scan",
+      "desc": "Consumer No 4920184",
+      "receipt": "elec_may.pdf"
+    },
+    {
+      "id": "EXP-104",
+      "date": "2026-05-20",
+      "title": "Dealer Broker Meet & Pamphlets",
+      "categoryId": "cat-6",
+      "amount": 23000,
+      "method": "Cheque",
+      "desc": "Summer loan mela promotions",
+      "receipt": ""
+    },
+    {
+      "id": "EXP-105",
+      "date": "2026-06-05",
+      "title": "June Staff Payroll Disbursement",
+      "categoryId": "cat-1",
+      "amount": 180000,
+      "method": "NEFT / RTGS",
+      "desc": "Salary for 7 employees",
+      "receipt": "payroll_jun26.pdf"
+    },
+    {
+      "id": "EXP-106",
+      "date": "2026-06-07",
+      "title": "Commercial Office Lease - June",
+      "categoryId": "cat-2",
+      "amount": 45000,
+      "method": "NEFT / RTGS",
+      "desc": "Unit 402, Business Plaza",
+      "receipt": "rent_jun26.pdf"
+    },
+    {
+      "id": "EXP-107",
+      "date": "2026-06-15",
+      "title": "Cloud Loan ERP & CIBIL API Renewal",
+      "categoryId": "cat-7",
+      "amount": 18500,
+      "method": "Corporate Credit Card",
+      "desc": "Quarterly SaaS & bureau credits",
+      "receipt": "saas_q2.pdf"
+    },
+    {
+      "id": "EXP-108",
+      "date": "2026-06-22",
+      "title": "Field Verification Fuel & Travel",
+      "categoryId": "cat-5",
+      "amount": 14500,
+      "method": "UPI / Corporate Scan",
+      "desc": "Reimbursement for 3 field officers",
+      "receipt": ""
+    },
+    {
+      "id": "EXP-109",
+      "date": "2026-06-27",
+      "title": "AC Servicing & UPS Battery Repair",
+      "categoryId": "cat-8",
+      "amount": 8500,
+      "method": "Petty Cash",
+      "desc": "Pre-monsoon maintenance",
+      "receipt": "ups_bill.jpg"
+    },
+    {
+      "id": "EXP-110",
+      "date": "2026-07-05",
+      "title": "July Staff Payroll Disbursement",
+      "categoryId": "cat-1",
+      "amount": 182000,
+      "method": "NEFT / RTGS",
+      "desc": "Payroll + collections bonus",
+      "receipt": "payroll_jul26.pdf"
+    },
+    {
+      "id": "EXP-111",
+      "date": "2026-07-07",
+      "title": "Commercial Office Lease - July",
+      "categoryId": "cat-2",
+      "amount": 45000,
+      "method": "NEFT / RTGS",
+      "desc": "Unit 402, Business Plaza",
+      "receipt": "rent_jul26.pdf"
+    },
+    {
+      "id": "EXP-112",
+      "date": "2026-07-12",
+      "title": "Electricity & Generator Fuel",
+      "categoryId": "cat-3",
+      "amount": 10500,
+      "method": "UPI / Corporate Scan",
+      "desc": "July utility payment",
+      "receipt": ""
+    },
+    {
+      "id": "EXP-113",
+      "date": "2026-07-18",
+      "title": "Dedicated Fiber Internet Line",
+      "categoryId": "cat-4",
+      "amount": 4200,
+      "method": "Corporate Credit Card",
+      "desc": "Airtel Corporate Fiber",
+      "receipt": "airtel_jul.pdf"
+    },
+    {
+      "id": "EXP-114",
+      "date": "2026-07-25",
+      "title": "Outstation Recovery Visits",
+      "categoryId": "cat-5",
+      "amount": 13000,
+      "method": "UPI / Corporate Scan",
+      "desc": "Pune & Nashik borrower visits",
+      "receipt": ""
+    },
+    {
+      "id": "EXP-115",
+      "date": "2026-08-05",
+      "title": "August Staff Payroll Disbursement",
+      "categoryId": "cat-1",
+      "amount": 185000,
+      "method": "NEFT / RTGS",
+      "desc": "Monthly staff payroll",
+      "receipt": "payroll_aug26.pdf"
+    },
+    {
+      "id": "EXP-116",
+      "date": "2026-08-07",
+      "title": "Commercial Office Lease - August",
+      "categoryId": "cat-2",
+      "amount": 45000,
+      "method": "NEFT / RTGS",
+      "desc": "Unit 402, Business Plaza",
+      "receipt": "rent_aug26.pdf"
+    },
+    {
+      "id": "EXP-117",
+      "date": "2026-08-14",
+      "title": "Festive MSME Loan Ad Campaign",
+      "categoryId": "cat-6",
+      "amount": 28000,
+      "method": "Cheque",
+      "desc": "Newspaper & local radio spots",
+      "receipt": "ad_aug26.pdf"
+    },
+    {
+      "id": "EXP-118",
+      "date": "2026-08-19",
+      "title": "Corporate Broadband & Static IP",
+      "categoryId": "cat-4",
+      "amount": 4200,
+      "method": "Corporate Credit Card",
+      "desc": "Monthly internet bill",
+      "receipt": ""
+    },
+    {
+      "id": "EXP-119",
+      "date": "2026-08-26",
+      "title": "Office Stationery & Stamp Papers",
+      "categoryId": "cat-9",
+      "amount": 6800,
+      "method": "Petty Cash",
+      "desc": "Loan agreement folders & printing",
+      "receipt": "stationery.jpg"
+    },
+    {
+      "id": "EXP-120",
+      "date": "2026-08-28",
+      "title": "Electricity Utility Bill",
+      "categoryId": "cat-3",
+      "amount": 10200,
+      "method": "UPI / Corporate Scan",
+      "desc": "August billing cycle",
+      "receipt": ""
+    },
+    {
+      "id": "EXP-121",
+      "date": "2026-09-05",
+      "title": "September Staff Payroll Disbursement",
+      "categoryId": "cat-1",
+      "amount": 185000,
+      "method": "NEFT / RTGS",
+      "desc": "Monthly staff payroll",
+      "receipt": "payroll_sep26.pdf"
+    },
+    {
+      "id": "EXP-122",
+      "date": "2026-09-07",
+      "title": "Commercial Office Lease - September",
+      "categoryId": "cat-2",
+      "amount": 45000,
+      "method": "NEFT / RTGS",
+      "desc": "Unit 402, Business Plaza",
+      "receipt": "rent_sep26.pdf"
+    },
+    {
+      "id": "EXP-123",
+      "date": "2026-09-15",
+      "title": "SMS Gateway & Cloud Accounting License",
+      "categoryId": "cat-7",
+      "amount": 16200,
+      "method": "Corporate Credit Card",
+      "desc": "Automated EMI reminder credits",
+      "receipt": "sms_invoice.pdf"
+    },
+    {
+      "id": "EXP-124",
+      "date": "2026-09-21",
+      "title": "Field Collection Conveyance",
+      "categoryId": "cat-5",
+      "amount": 15800,
+      "method": "UPI / Corporate Scan",
+      "desc": "September recovery team claims",
+      "receipt": ""
+    },
+    {
+      "id": "EXP-125",
+      "date": "2026-09-28",
+      "title": "Electricity Bill - September",
+      "categoryId": "cat-3",
+      "amount": 9600,
+      "method": "UPI / Corporate Scan",
+      "desc": "Monthly power bill",
+      "receipt": "elec_sep.pdf"
+    },
+    {
+      "id": "EXP-126",
+      "date": "2026-10-05",
+      "title": "October Staff Payroll & Diwali Bonus",
+      "categoryId": "cat-1",
+      "amount": 195000,
+      "method": "NEFT / RTGS",
+      "desc": "Salary + festive ex-gratia",
+      "receipt": "payroll_oct26.pdf"
+    },
+    {
+      "id": "EXP-127",
+      "date": "2026-10-07",
+      "title": "Commercial Office Lease - October",
+      "categoryId": "cat-2",
+      "amount": 45000,
+      "method": "NEFT / RTGS",
+      "desc": "Unit 402, Business Plaza",
+      "receipt": "rent_oct26.pdf"
+    },
+    {
+      "id": "EXP-128",
+      "date": "2026-10-12",
+      "title": "Electricity Utility Bill",
+      "categoryId": "cat-3",
+      "amount": 10800,
+      "method": "UPI / Corporate Scan",
+      "desc": "October billing cycle",
+      "receipt": "elec_oct.pdf"
+    },
+    {
+      "id": "EXP-129",
+      "date": "2026-10-16",
+      "title": "Airtel Leased Line Fiber",
+      "categoryId": "cat-4",
+      "amount": 4200,
+      "method": "Corporate Credit Card",
+      "desc": "Monthly broadband charges",
+      "receipt": "fiber_oct.pdf"
+    },
+    {
+      "id": "EXP-130",
+      "date": "2026-10-20",
+      "title": "Diwali Client Gift Hampers & Banners",
+      "categoryId": "cat-6",
+      "amount": 22400,
+      "method": "Cheque",
+      "desc": "Promotional branding & gifts",
+      "receipt": "marketing_oct.pdf"
+    },
+    {
+      "id": "EXP-131",
+      "date": "2026-10-24",
+      "title": "Printer Drum Replacement & Cleaning",
+      "categoryId": "cat-8",
+      "amount": 7400,
+      "method": "Petty Cash",
+      "desc": "HP LaserJet service",
+      "receipt": "printer_srv.jpg"
+    },
+    {
+      "id": "EXP-132",
+      "date": "2026-10-27",
+      "title": "Pantry Refreshments & Courier Charges",
+      "categoryId": "cat-9",
+      "amount": 7800,
+      "method": "Petty Cash",
+      "desc": "NACH mandate speed post & hospitality",
+      "receipt": ""
+    }
+  ],
+  "emis": [
+    {
+      "id": "EMI-901",
+      "loanId": "LN-2026-104",
+      "customer": "Vikramaditya Deshmukh",
+      "phone": "+919820144110",
+      "dueDate": "2026-11-01",
+      "installmentNo": "8 / 24",
+      "emiAmount": 24500,
+      "paidAmount": 0,
+      "outstandingLoan": 392000,
+      "status": "Upcoming"
+    },
+    {
+      "id": "EMI-902",
+      "loanId": "LN-2026-118",
+      "customer": "Meenakshi Sundaram",
+      "phone": "+919845031902",
+      "dueDate": "2026-11-03",
+      "installmentNo": "5 / 18",
+      "emiAmount": 18200,
+      "paidAmount": 0,
+      "outstandingLoan": 236600,
+      "status": "Upcoming"
+    },
+    {
+      "id": "EMI-903",
+      "loanId": "LN-2026-129",
+      "customer": "Siddharth Malhotra Traders",
+      "phone": "+919811277834",
+      "dueDate": "2026-11-05",
+      "installmentNo": "11 / 36",
+      "emiAmount": 42000,
+      "paidAmount": 0,
+      "outstandingLoan": 1050000,
+      "status": "Upcoming"
+    },
+    {
+      "id": "EMI-904",
+      "loanId": "LN-2026-142",
+      "customer": "Ananya Chatterjee",
+      "phone": "+919830166519",
+      "dueDate": "2026-11-07",
+      "installmentNo": "4 / 12",
+      "emiAmount": 12800,
+      "paidAmount": 0,
+      "outstandingLoan": 102400,
+      "status": "Upcoming"
+    },
+    {
+      "id": "EMI-905",
+      "loanId": "LN-2026-155",
+      "customer": "Kulkarni Agro Agencies",
+      "phone": "+919422088712",
+      "dueDate": "2026-11-10",
+      "installmentNo": "14 / 24",
+      "emiAmount": 36000,
+      "paidAmount": 0,
+      "outstandingLoan": 360000,
+      "status": "Upcoming"
+    },
+    {
+      "id": "EMI-906",
+      "loanId": "LN-2026-163",
+      "customer": "Farhan Sheikh Logistics",
+      "phone": "+919920451230",
+      "dueDate": "2026-11-12",
+      "installmentNo": "6 / 24",
+      "emiAmount": 29500,
+      "paidAmount": 0,
+      "outstandingLoan": 531000,
+      "status": "Upcoming"
+    },
+    {
+      "id": "EMI-840",
+      "loanId": "LN-2025-078",
+      "customer": "Bansal Steel Fabricators",
+      "phone": "+919818022391",
+      "dueDate": "2026-09-10",
+      "installmentNo": "16 / 36",
+      "emiAmount": 48000,
+      "paidAmount": 0,
+      "outstandingLoan": 960000,
+      "status": "Overdue"
+    },
+    {
+      "id": "EMI-852",
+      "loanId": "LN-2025-092",
+      "customer": "Rameshwar Prasad Verma",
+      "phone": "+919711564009",
+      "dueDate": "2026-09-25",
+      "installmentNo": "12 / 24",
+      "emiAmount": 16500,
+      "paidAmount": 6500,
+      "outstandingLoan": 198000,
+      "status": "Partially Paid"
+    },
+    {
+      "id": "EMI-861",
+      "loanId": "LN-2026-019",
+      "customer": "Shree Ganesh Enterprises",
+      "phone": "+919823090112",
+      "dueDate": "2026-10-05",
+      "installmentNo": "9 / 24",
+      "emiAmount": 32000,
+      "paidAmount": 0,
+      "outstandingLoan": 480000,
+      "status": "Overdue"
+    },
+    {
+      "id": "EMI-874",
+      "loanId": "LN-2026-044",
+      "customer": "Deepika Nair Boutique",
+      "phone": "+919895133478",
+      "dueDate": "2026-10-12",
+      "installmentNo": "7 / 18",
+      "emiAmount": 15000,
+      "paidAmount": 8000,
+      "outstandingLoan": 165000,
+      "status": "Partially Paid"
+    },
+    {
+      "id": "EMI-880",
+      "loanId": "LN-2026-061",
+      "customer": "Harpreet Singh Transport",
+      "phone": "+919814078231",
+      "dueDate": "2026-10-18",
+      "installmentNo": "6 / 36",
+      "emiAmount": 54000,
+      "paidAmount": 0,
+      "outstandingLoan": 1620000,
+      "status": "Overdue"
+    },
+    {
+      "id": "EMI-885",
+      "loanId": "LN-2026-088",
+      "customer": "Prakash Joshi Medicals",
+      "phone": "+919822111098",
+      "dueDate": "2026-10-15",
+      "installmentNo": "5 / 12",
+      "emiAmount": 21000,
+      "paidAmount": 21000,
+      "outstandingLoan": 147000,
+      "status": "Paid"
+    },
+    {
+      "id": "EMI-890",
+      "loanId": "LN-2026-095",
+      "customer": "Neha Kapoor Designs",
+      "phone": "+919810945210",
+      "dueDate": "2026-10-20",
+      "installmentNo": "4 / 12",
+      "emiAmount": 19500,
+      "paidAmount": 19500,
+      "outstandingLoan": 156000,
+      "status": "Paid"
+    }
+  ]
+}
