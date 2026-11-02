@@ -1208,11 +1208,15 @@ main { padding:32px 34px 56px; max-width:1600px; margin:0 auto; }
 .quick-icon-ring.red { color: #ef4444; }
 .quick-icon-ring.blue { color: #3b82f6; }
 .quick-icon-ring.amber { color: #d97706; }
+.quick-icon-ring.violet { color: #6366f1; }
 
 .quick-action-label {
   font-size: 11px;
-  font-weight: 600;
-  color: #475569;
+  font-weight: 700;
+  color: #334155;
+  margin-top: 5px;
+  display: block;
+  letter-spacing: 0.1px;
 }
 
 /* Recent Activity Section from Screenshot */

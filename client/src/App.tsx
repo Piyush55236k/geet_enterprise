@@ -3399,42 +3399,42 @@ function MobileHome({
         </div>
       </div>
 
-      {/* 3. 4 Circular Quick Action Buttons from Reference Design */}
+      {/* 3. 4 Circular Quick Action Buttons tailored to Geet Enterprise Finance ERP */}
       <div className="mobile-quick-actions">
-        <button type="button" className="quick-action-item" onClick={openAddLead}>
+        <button type="button" className="quick-action-item" onClick={openAddLead} title="Add Customer Lead">
           <div className="quick-action-circle">
             <div className="quick-icon-ring green">
-              <Icon name="transfer" size={17}/>
+              <Icon name="leads" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Transfer</span>
+          <span className="quick-action-label">Add Lead</span>
         </button>
 
-        <button type="button" className="quick-action-item" onClick={openConvertLead}>
-          <div className="quick-action-circle">
-            <div className="quick-icon-ring red">
-              <Icon name="request" size={17}/>
-            </div>
-          </div>
-          <span className="quick-action-label">Request</span>
-        </button>
-
-        <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')}>
+        <button type="button" className="quick-action-item" onClick={openConvertLead} title="Sanction Loan / Convert Lead">
           <div className="quick-action-circle">
             <div className="quick-icon-ring blue">
-              <Icon name="exchange" size={17}/>
+              <Icon name="bolt" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Exchange</span>
+          <span className="quick-action-label">Sanction</span>
         </button>
 
-        <button type="button" className="quick-action-item" onClick={openAddExpense}>
+        <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')} title="EMI Collections & Schedule">
           <div className="quick-action-circle">
             <div className="quick-icon-ring amber">
-              <Icon name="bills" size={17}/>
+              <Icon name="payments" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Bills</span>
+          <span className="quick-action-label">Collections</span>
+        </button>
+
+        <button type="button" className="quick-action-item" onClick={openAddExpense} title="Record Operating Expense">
+          <div className="quick-action-circle">
+            <div className="quick-icon-ring red">
+              <Icon name="expense" size={17}/>
+            </div>
+          </div>
+          <span className="quick-action-label">Expenses</span>
         </button>
       </div>
 
