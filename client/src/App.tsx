@@ -3310,91 +3310,54 @@ function MobileHome({
         )}
       </div>
 
-      {/* 2. Centralized Capital Card matching reference styling */}
-      <div className="mobile-card-carousel">
-        {/* Main Master Capital Card */}
-        <div className="mobile-bank-card">
-          <div className="mobile-card-decor"/>
-          <div className="mobile-card-head">
-            <div>
-              <span className="mobile-card-eyebrow">CENTRALIZED MASTER WALLET</span>
-              <h4 className="mobile-card-title">Geet Capital Pool</h4>
-            </div>
-            <button
-              type="button"
-              className="mobile-card-options-btn"
-              title="Add Capital Investment"
-              onClick={openAddCapital}
-            >
-              <Icon name="plus" size={16}/>
-            </button>
+      {/* 2. Simple, High-Visibility Cash Balance Card (Easy for all users) */}
+      <div className="simple-balance-card">
+        <div className="simple-balance-top">
+          <div className="simple-balance-badge">
+            <span className="simple-badge-dot"/>
+            <span>उपलब्ध रोकड़ (Cash in Hand)</span>
           </div>
-
-          <div className="mobile-card-mid">
-            <button
-              type="button"
-              className="mobile-balance-pill"
-              onClick={() => setBalanceRevealed(!balanceRevealed)}
-            >
-              <Icon name={balanceRevealed ? 'eyeOff' : 'eye'} size={14}/>
-              {balanceRevealed ? 'Hide Balance' : 'Click for Balance'}
-            </button>
-
-            {balanceRevealed ? (
-              <div style={{ marginTop: '10px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'Manrope', color: '#ffffff' }}>
-                  {money(masterWallet.available_balance)}
-                </div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                  Liquid available for immediate loan disbursals
-                </div>
-              </div>
-            ) : (
-              <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '4px', color: 'rgba(255,255,255,0.7)', marginTop: '8px' }}>
-                ₹ ••••••••
-              </div>
-            )}
-          </div>
-
-          <div className="mobile-card-foot">
-            <div>
-              <span style={{ fontSize: '9px', opacity: 0.75, display: 'block' }}>TOTAL CAPITAL</span>
-              <strong style={{ fontSize: '12px', letterSpacing: '0.5px' }}>{money(masterWallet.total_capital)}</strong>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '9px', opacity: 0.75, display: 'block' }}>DEPLOYED IN LOANS</span>
-              <strong style={{ fontSize: '12px', letterSpacing: '0.5px' }}>{money(masterWallet.allocated_capital)}</strong>
-            </div>
-          </div>
+          <button
+            type="button"
+            className="simple-add-capital-btn"
+            onClick={openAddCapital}
+            title="Add Capital Investment / पूंजी जोड़ें"
+          >
+            <Icon name="plus" size={13}/> + पूंजी जोड़ें
+          </button>
         </div>
 
-        {/* Secondary Card: Active Loans Portfolio */}
-        <div
-          className="mobile-bank-card secondary-card"
-          onClick={() => navigate('Loans')}
-          style={{ cursor: 'pointer' }}
-        >
-          <div className="mobile-card-decor"/>
-          <div className="mobile-card-head">
-            <div>
-              <span className="mobile-card-eyebrow">PORTFOLIO</span>
-              <h4 className="mobile-card-title">Active Loans</h4>
-            </div>
-            <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.18)', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
-              {loans.length} Loans
-            </span>
-          </div>
-          <div className="mobile-card-mid">
-            <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'Manrope' }}>
-              {money(masterWallet.allocated_capital)}
-            </div>
-            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
-              130% Multiplier · 15D EMI Schedule
+        <div className="simple-main-amount">
+          {money(masterWallet.available_balance)}
+        </div>
+        <div className="simple-amount-sub">
+          तुरंत लोन देने व खर्च के लिए तैयार रोकड़ बैलेंस
+        </div>
+
+        {/* 2 Clear Visual Stat Blocks */}
+        <div className="simple-stats-row">
+          <div
+            className="simple-stat-box"
+            onClick={() => navigate('Capital & Partners')}
+            title="View Capital Partners & Equity"
+          >
+            <div className="simple-stat-icon">🏦</div>
+            <div className="simple-stat-info">
+              <span className="simple-stat-label">कुल पूंजी (Total Fund)</span>
+              <strong className="simple-stat-val">{money(masterWallet.total_capital)}</strong>
             </div>
           </div>
-          <div className="mobile-card-foot">
-            <span style={{ fontSize: '11px', opacity: 0.85 }}>GEET ENTERPRISE</span>
-            <span style={{ fontSize: '11px', opacity: 0.85, fontWeight: 700 }}>Tap to view loans →</span>
+
+          <div
+            className="simple-stat-box"
+            onClick={() => navigate('Loans')}
+            title="View All Loans"
+          >
+            <div className="simple-stat-icon">🤝</div>
+            <div className="simple-stat-info">
+              <span className="simple-stat-label">मार्केट में लोन ({loans.length})</span>
+              <strong className="simple-stat-val">{money(masterWallet.allocated_capital)}</strong>
+            </div>
           </div>
         </div>
       </div>

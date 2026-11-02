@@ -1160,6 +1160,151 @@ main { padding:32px 34px 56px; max-width:1600px; margin:0 auto; }
   font-weight: 600;
 }
 
+/* ============================================================= */
+/* SIMPLE CASH PASSBOOK BALANCE CARD (EASY UI FOR ALL USERS) */
+/* ============================================================= */
+
+.simple-balance-card {
+  margin: 14px 18px 6px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  border: 1.5px solid #e2e8f0;
+  transition: all 0.15s;
+}
+
+.theme-violet .simple-balance-card {
+  border-top: 4px solid #6366f1;
+}
+
+.theme-amber .simple-balance-card {
+  border-top: 4px solid #f59e0b;
+}
+
+.theme-cyan .simple-balance-card {
+  border-top: 4px solid #06b6d4;
+}
+
+.simple-balance-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.simple-balance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.simple-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.simple-add-capital-btn {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.simple-add-capital-btn:active {
+  transform: scale(0.95);
+  background: #dbeafe;
+}
+
+.simple-main-amount {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: 'Manrope', sans-serif;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+  margin: 6px 0 2px;
+}
+
+.simple-amount-sub {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.simple-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.simple-stat-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.simple-stat-box:active {
+  transform: scale(0.97);
+  background: #f1f5f9;
+}
+
+.simple-stat-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.simple-stat-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.simple-stat-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.simple-stat-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: 'Manrope', sans-serif;
+  margin-top: 2px;
+}
+
 /* 4 Quick Actions Row from Screenshot */
 .mobile-quick-actions {
   display: grid;
