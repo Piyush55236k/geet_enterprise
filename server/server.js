@@ -103,6 +103,57 @@ app.get('/api/pnl', (req, res) => {
   }
 });
 
+// Financers & Teams (Chain Reaction Hierarchy)
+app.get('/api/financers', (req, res) => {
+  try {
+    const financers = db.getFinancersWithTeams();
+    res.json({ success: true, data: financers });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/financers', (req, res) => {
+  try {
+    const { name, role, phone, email, capitalInvested } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, error: 'Financer name is required.' });
+    }
+    const created = db.addFinancer({ name, role, phone, email, capitalInvested });
+    res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/financers/:id/teams', (req, res) => {
+  try {
+    const { name, role, phone, email } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, error: 'Team / Agent name is required.' });
+    }
+    const created = db.addFinancerTeam({
+      financerId: req.params.id,
+      name,
+      role,
+      phone,
+      email
+    });
+    res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/financer-teams/:id', (req, res) => {
+  try {
+    db.deleteFinancerTeam(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Leads
 app.get('/api/leads', (req, res) => {
   try {
@@ -115,7 +166,22 @@ app.get('/api/leads', (req, res) => {
 
 app.post('/api/leads', (req, res) => {
   try {
-    const { business, contactPerson, contact_person, phone, email, requirement, source, status } = req.body;
+    const {
+      business,
+      contactPerson,
+      contact_person,
+      phone,
+      email,
+      requirement,
+      source,
+      status,
+      financerId,
+      financerName,
+      teamId,
+      teamName,
+      createdBy
+    } = req.body;
+
     if (!business) {
       return res.status(400).json({ success: false, error: 'Business name is required.' });
     }
@@ -126,7 +192,12 @@ app.post('/api/leads', (req, res) => {
       email,
       requirement: Number(requirement) || 0,
       source: source || 'Referral',
-      status: status || 'New'
+      status: status || 'New',
+      financerId,
+      financerName,
+      teamId,
+      teamName,
+      createdBy: createdBy || 'Admin'
     });
     res.status(201).json({ success: true, data: created });
   } catch (error) {

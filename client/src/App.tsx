@@ -117,6 +117,39 @@ const navItems: { name: Screen; icon: IconName }[] = [
   { name: 'Transactions', icon: 'transaction' },
 ]
 
+type FinancerTeam = {
+  id: string
+  financer_id: string
+  name: string
+  role: string
+  phone: string
+  email: string
+  status: string
+}
+
+type Financer = {
+  id: string
+  name: string
+  role: string
+  theme: 'violet' | 'amber' | 'cyan'
+  capital_invested: number
+  phone?: string
+  email?: string
+  status?: string
+  teams: FinancerTeam[]
+  leadsCount?: number
+}
+
+type UserRole = {
+  type: 'admin' | 'financer' | 'team'
+  id: string
+  name: string
+  financerId?: string
+  financerName?: string
+  teamId?: string
+  teamName?: string
+}
+
 type Partner = {
   id: string
   name: string
@@ -294,13 +327,21 @@ function Dashboard({
 function CapitalAndPartners({
   masterWallet,
   partners,
+  financers,
   transactions,
-  openAddCapital
+  openAddCapital,
+  openAddFinancer,
+  openAddTeam,
+  onDeleteTeam
 }: {
   masterWallet: { total_capital: number; available_balance: number; allocated_capital: number }
   partners: Partner[]
+  financers: Financer[]
   transactions: string[][]
   openAddCapital: () => void
+  openAddFinancer: () => void
+  openAddTeam: (financerId: string, financerName: string) => void
+  onDeleteTeam: (teamId: string, teamName: string) => void
 }) {
   const [query, setQuery] = useState('')
   const filtered = useMemo(() => {
@@ -327,20 +368,138 @@ function CapitalAndPartners({
         </div>
       </div>
 
-      <div className="m-action-bar">
+      {/* Action Bar */}
+      <div className="m-action-bar" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
         <button
           type="button"
           className="m-action-btn primary"
+          onClick={openAddFinancer}
+        >
+          <Icon name="plus" size={16}/> Add Financer
+        </button>
+        <button
+          type="button"
+          className="m-action-btn secondary"
           onClick={openAddCapital}
         >
           <Icon name="plus" size={16}/> Invest Capital
         </button>
       </div>
 
-      {/* Partners List */}
+      {/* Chain Reaction Hierarchy Notice */}
+      <div className="m-notice-box" style={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1e40af' }}>
+        <Icon name="bolt" size={16}/>
+        <div>
+          <strong>Chain Reaction Hierarchy:</strong> Admin adds Financers, and each Financer can manage their Sub-Teams. Leads added link to their assigned Sub-Team or directly to the Financer.
+        </div>
+      </div>
+
+      {/* Financers & Sub-Teams List */}
       <div className="m-section-header">
         <h4 className="m-section-title">
-          <Icon name="userWallet" size={16}/> Capital Partners & Equity
+          <Icon name="userWallet" size={16}/> Financers & Teams (Chain Reaction)
+          <span className="m-count-badge">{financers.length}</span>
+        </h4>
+      </div>
+
+      {financers.map(f => {
+        const teamCount = f.teams?.length || 0
+        return (
+          <div className="m-partner-card" key={f.id}>
+            <div className="m-partner-head">
+              <div className="m-partner-avatar" style={{ background: f.theme === 'amber' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : f.theme === 'cyan' ? 'linear-gradient(135deg, #06b6d4, #0891b2)' : 'linear-gradient(135deg, #6366f1, #4f46e5)' }}>
+                {f.name.split(' ').map(x => x[0]).join('')}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>{f.name}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>{f.role || 'Financer / Capital Partner'}</div>
+              </div>
+              <Badge status={f.status || 'Active'}/>
+            </div>
+
+            <div className="m-card-grid">
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Capital Invested</span>
+                <span className="m-grid-value highlight">{money(f.capital_invested || 0)}</span>
+              </div>
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Sub-Teams & Agents</span>
+                <span className="m-grid-value highlight" style={{ color: teamCount > 0 ? '#2563eb' : '#d97706' }}>
+                  {teamCount > 0 ? `${teamCount} Sub-Teams` : '0 Teams (Direct)'}
+                </span>
+              </div>
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Assigned Leads</span>
+                <span className="m-grid-value success">{f.leadsCount || 0} Leads</span>
+              </div>
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Chain Attribution Mode</span>
+                <span className="m-grid-value" style={{ fontSize: '11px', color: teamCount > 0 ? '#16a34a' : '#d97706' }}>
+                  {teamCount > 0 ? 'Tier 2 (Via Teams)' : 'Tier 1 (Financer Direct)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Sub-Teams list under this Financer */}
+            <div className="m-team-sublist">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Sub-Teams & Agents ({teamCount})
+                </span>
+                <button
+                  type="button"
+                  className="m-add-subteam-btn"
+                  onClick={() => openAddTeam(f.id, f.name)}
+                >
+                  <Icon name="plus" size={13}/> Add Team / Agent
+                </button>
+              </div>
+
+              {teamCount > 0 ? (
+                f.teams.map(t => (
+                  <div className="m-team-item" key={t.id}>
+                    <div className="m-team-item-left">
+                      <div className="m-team-badge-icon">👥</div>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{t.name}</div>
+                        <div style={{ fontSize: '10px', color: '#64748b' }}>
+                          {t.role} {t.phone ? `· ${t.phone}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteTeam(t.id, t.name)}
+                      style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fee2e2',
+                        color: '#ef4444',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        fontWeight: 700
+                      }}
+                      title="Remove Sub-Team"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: '11px', color: '#92400e', background: '#fef3c7', padding: '8px 10px', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                  ⚡ <strong>Direct Financer Attribution:</strong> No sub-teams added yet. Any lead assigned to {f.name} will belong directly to them!
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+
+      {/* Partners Equity List */}
+      <div className="m-section-header" style={{ marginTop: '20px' }}>
+        <h4 className="m-section-title">
+          <Icon name="chart" size={16}/> Central Capital Partners & Equity
           <span className="m-count-badge">{partners.length}</span>
         </h4>
       </div>
@@ -429,18 +588,28 @@ function CapitalAndPartners({
 
 function Leads({
   leads,
+  financers,
   openAdd,
   convert
 }: {
   leads: string[][]
+  financers: Financer[]
   openAdd: () => void
   convert: (id: string, name: string) => void
 }) {
   const [query, setQuery] = useState('')
+  const [selectedFinancerFilter, setSelectedFinancerFilter] = useState('all')
+
   const filtered = useMemo(() => {
-    if (!query) return leads
-    return leads.filter(r => r.join(' ').toLowerCase().includes(query.toLowerCase()))
-  }, [leads, query])
+    let res = leads
+    if (selectedFinancerFilter !== 'all') {
+      res = res.filter(r => (r[8] && r[8] === selectedFinancerFilter) || (r[7] && r[7].toLowerCase().includes(selectedFinancerFilter.toLowerCase())))
+    }
+    if (query) {
+      res = res.filter(r => r.join(' ').toLowerCase().includes(query.toLowerCase()))
+    }
+    return res
+  }, [leads, selectedFinancerFilter, query])
 
   const qualifiedCount = leads.filter(l => l[6] === 'Qualified').length
   const followUpCount = leads.filter(l => l[6] === 'Follow-up').length
@@ -470,14 +639,59 @@ function Leads({
       <div className="m-notice-box">
         <Icon name="bolt" size={16}/>
         <div>
-          <strong>Convert Lead to Loan:</strong> Tap "Convert to Loan" on any qualified lead to open the funding calculator, generate all EMIs, and sanction loan funding.
+          <strong>Chain Reaction Attribution:</strong> Leads link down the chain: <strong>Admin ➔ Financer ➔ Sub-Team</strong>. If a financer has no team, the lead attributes directly to that financer.
         </div>
+      </div>
+
+      {/* Financer Chain Filter Pills */}
+      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '10px' }}>
+        <button
+          type="button"
+          onClick={() => setSelectedFinancerFilter('all')}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '20px',
+            fontSize: '11px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            border: selectedFinancerFilter === 'all' ? '1.5px solid var(--accent)' : '1px solid #e2e8f0',
+            background: selectedFinancerFilter === 'all' ? 'var(--accent)' : '#ffffff',
+            color: selectedFinancerFilter === 'all' ? '#ffffff' : '#475569'
+          }}
+        >
+          All Leads ({leads.length})
+        </button>
+        {financers.map(f => {
+          const count = leads.filter(l => (l[8] && l[8] === f.name) || (l[7] && l[7].includes(f.name))).length
+          const isActive = selectedFinancerFilter === f.name
+          return (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setSelectedFinancerFilter(isActive ? 'all' : f.name)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                border: isActive ? '1.5px solid #4f46e5' : '1px solid #e2e8f0',
+                background: isActive ? '#eff6ff' : '#ffffff',
+                color: isActive ? '#1e40af' : '#475569'
+              }}
+            >
+              💼 {f.name} ({count})
+            </button>
+          )
+        })}
       </div>
 
       <MSearchBar
         value={query}
         onChange={setQuery}
-        placeholder="Search customer, business, or phone..."
+        placeholder="Search customer, business, phone or chain..."
       />
 
       <div className="m-section-header">
@@ -494,6 +708,7 @@ function Leads({
       ) : (
         filtered.map((lead, idx) => {
           const isConverted = lead[6] === 'Converted'
+          const attribution = lead[7] || 'Admin Direct'
           return (
             <div className="m-card" key={`${lead[0]}-${idx}`}>
               <div className="m-card-head">
@@ -503,6 +718,12 @@ function Leads({
                 </div>
                 <Badge status={lead[6]}/>
               </div>
+
+              {/* Chain Reaction Attribution Pill */}
+              <div className="m-chain-pill">
+                <span>🔗 Chain:</span> <strong>{attribution}</strong>
+              </div>
+
               <div className="m-card-grid">
                 <div className="m-grid-cell">
                   <span className="m-grid-label">Contact Person</span>
@@ -521,6 +742,7 @@ function Leads({
                   <span className="m-grid-value">{lead[5] || 'Referral'}</span>
                 </div>
               </div>
+
               <div className="m-card-actions">
                 {!isConverted ? (
                   <button
@@ -2055,18 +2277,24 @@ function Modal({ title, subtitle, children, onClose, large }: { title: string; s
 function FormModal({
   type,
   targetId,
+  targetFinancerName,
   targetEmi,
   availableBalance,
   partners,
+  financers,
+  activeRole,
   leads,
   onClose,
   onDone
 }: {
   type: string
   targetId?: string
+  targetFinancerName?: string
   targetEmi?: EmiItem | null
   availableBalance: number
   partners: Partner[]
+  financers: Financer[]
+  activeRole: UserRole
   leads: string[][]
   onClose: () => void
   onDone: (message: string) => void
@@ -2087,6 +2315,28 @@ function FormModal({
   const [leadAmount, setLeadAmount] = useState('1000000')
   const [leadSource, setLeadSource] = useState('Referral')
   const [leadStatus, setLeadStatus] = useState('Qualified')
+
+  // Lead Chain Selection State
+  const initialFinancerId = activeRole?.financerId || (financers[0]?.id || '')
+  const [selectedFinancerId, setSelectedFinancerId] = useState(initialFinancerId)
+  const [selectedTeamId, setSelectedTeamId] = useState(activeRole?.teamId || '')
+
+  const curFinancer = financers.find(f => f.id === selectedFinancerId)
+  const hasTeams = Boolean(curFinancer && curFinancer.teams && curFinancer.teams.length > 0)
+  const curTeam = hasTeams ? curFinancer?.teams?.find(t => t.id === selectedTeamId) : null
+
+  // Financer Form State
+  const [financerName, setFinancerName] = useState('')
+  const [financerRole, setFinancerRole] = useState('Financer / Capital Partner')
+  const [financerPhone, setFinancerPhone] = useState('')
+  const [financerEmail, setFinancerEmail] = useState('')
+  const [financerCapital, setFinancerCapital] = useState('1000000')
+
+  // Sub-Team Form State
+  const [teamName, setTeamName] = useState('')
+  const [teamRole, setTeamRole] = useState('Loan Agent / Sub-Team')
+  const [teamPhone, setTeamPhone] = useState('')
+  const [teamEmail, setTeamEmail] = useState('')
 
   // Expense Form State
   const [expCategory, setExpCategory] = useState('Operations')
@@ -2144,6 +2394,12 @@ function FormModal({
           setSubmitting(false)
           return
         }
+
+        const finId = curFinancer ? curFinancer.id : ''
+        const finName = curFinancer ? curFinancer.name : ''
+        const tmId = curTeam ? curTeam.id : ''
+        const tmName = curTeam ? curTeam.name : ''
+
         const res = await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2154,15 +2410,72 @@ function FormModal({
             email: leadEmail.trim(),
             requirement: Number(leadAmount) || 0,
             source: leadSource,
-            status: leadStatus
+            status: leadStatus,
+            financerId: finId,
+            financerName: finName,
+            teamId: tmId,
+            teamName: tmName,
+            createdBy: activeRole?.name || 'Admin'
           })
         })
         const data = await res.json()
         if (data.success) {
           onClose()
-          onDone(`Lead "${leadBusiness}" added successfully!`)
+          const attrText = finName
+            ? tmName
+              ? `${finName} ➔ ${tmName}`
+              : `${finName} (Direct)`
+            : 'Admin Direct'
+          onDone(`Lead "${leadBusiness}" added! Chain Attribution: ${attrText}`)
         } else {
           alert(data.error || 'Failed to save lead')
+        }
+      } else if (type === 'add-financer') {
+        if (!financerName.trim()) {
+          alert('Please enter financer name')
+          setSubmitting(false)
+          return
+        }
+        const res = await fetch('/api/financers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: financerName.trim(),
+            role: financerRole.trim(),
+            phone: financerPhone.trim(),
+            email: financerEmail.trim(),
+            capitalInvested: Number(financerCapital) || 0
+          })
+        })
+        const data = await res.json()
+        if (data.success) {
+          onClose()
+          onDone(`Financer "${financerName}" created in Chain Reaction hierarchy!`)
+        } else {
+          alert(data.error || 'Failed to add financer')
+        }
+      } else if (type === 'add-team') {
+        if (!teamName.trim() || !targetId) {
+          alert('Please enter team / agent name')
+          setSubmitting(false)
+          return
+        }
+        const res = await fetch(`/api/financers/${targetId}/teams`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: teamName.trim(),
+            role: teamRole.trim(),
+            phone: teamPhone.trim(),
+            email: teamEmail.trim()
+          })
+        })
+        const data = await res.json()
+        if (data.success) {
+          onClose()
+          onDone(`Sub-team "${teamName}" attached under Financer ${targetFinancerName || 'Financer'}!`)
+        } else {
+          alert(data.error || 'Failed to add sub-team')
         }
       } else if (type === 'expense') {
         if (!expDesc.trim() || !expAmount) {
@@ -2537,11 +2850,207 @@ function FormModal({
 
 
 
+  // 4. Add Financer Modal (Chain Reaction Tier 1)
+  if (type === 'add-financer') {
+    return (
+      <Modal title="Add New Financer" subtitle="Add financer into the Chain Reaction hierarchy" onClose={onClose}>
+        <form onSubmit={submit} className="form">
+          <div className="form-grid">
+            <label style={{ gridColumn: '1/3' }}>
+              Financer Name *
+              <input
+                type="text"
+                value={financerName}
+                onChange={e => setFinancerName(e.target.value)}
+                placeholder="e.g. Sanjay Gupta or Singhania Capital"
+                required
+                autoFocus
+              />
+            </label>
+            <label>
+              Designation / Role
+              <input
+                type="text"
+                value={financerRole}
+                onChange={e => setFinancerRole(e.target.value)}
+                placeholder="e.g. Financer / Capital Partner"
+              />
+            </label>
+            <label>
+              Contact Phone
+              <input
+                type="text"
+                value={financerPhone}
+                onChange={e => setFinancerPhone(e.target.value)}
+                placeholder="+91 98765 00000"
+              />
+            </label>
+            <label style={{ gridColumn: '1/3' }}>
+              Email Address
+              <input
+                type="email"
+                value={financerEmail}
+                onChange={e => setFinancerEmail(e.target.value)}
+                placeholder="financer@domain.com"
+              />
+            </label>
+            <label style={{ gridColumn: '1/3' }}>
+              Initial Capital to Invest (₹)
+              <input
+                type="number"
+                onWheel={e => (e.target as HTMLElement).blur()}
+                value={financerCapital}
+                onChange={e => setFinancerCapital(e.target.value)}
+                placeholder="1000000"
+              />
+              <small style={{ color: 'var(--muted)', fontSize: '9px', marginTop: '4px' }}>
+                Invested capital is credited directly to Centralized Pool and partner equity shares update dynamically.
+              </small>
+            </label>
+          </div>
+          <div className="notice" style={{ background: '#f0fdf4', borderColor: '#22c55e', color: '#15803d', marginTop: '12px' }}>
+            <Icon name="bolt" size={16}/>
+            <div>
+              <strong>Chain Reaction:</strong> Once created, you can add Sub-Teams under this financer or let leads attribute directly to them!
+            </div>
+          </div>
+          <div className="modal-actions">
+            <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancel</Button>
+            <Button type="submit" disabled={submitting}>{submitting ? 'Creating...' : 'Add Financer to Chain'}</Button>
+          </div>
+        </form>
+      </Modal>
+    )
+  }
+
+  // 5. Add Sub-Team / Agent Modal (Chain Reaction Tier 2)
+  if (type === 'add-team') {
+    return (
+      <Modal title="Add Sub-Team / Loan Agent" subtitle={`Attach team member under Financer: ${targetFinancerName || 'Financer'}`} onClose={onClose}>
+        <form onSubmit={submit} className="form">
+          <div className="notice" style={{ background: '#eff6ff', borderColor: '#3b82f6', color: '#1d4ed8', marginBottom: '14px' }}>
+            <Icon name="check"/>
+            <div>
+              <strong>Parent Financer: {targetFinancerName || 'Financer'}</strong>
+              <span>Leads assigned to this sub-team will carry chain attribution: {targetFinancerName || 'Financer'} ➔ [Team Name].</span>
+            </div>
+          </div>
+          <div className="form-grid">
+            <label style={{ gridColumn: '1/3' }}>
+              Team / Agent Name *
+              <input
+                type="text"
+                value={teamName}
+                onChange={e => setTeamName(e.target.value)}
+                placeholder="e.g. West Delhi Field Agents or Vikram Malhotra"
+                required
+                autoFocus
+              />
+            </label>
+            <label>
+              Role / Designation
+              <input
+                type="text"
+                value={teamRole}
+                onChange={e => setTeamRole(e.target.value)}
+                placeholder="e.g. Senior Acquisition Agent"
+              />
+            </label>
+            <label>
+              Contact Phone
+              <input
+                type="text"
+                value={teamPhone}
+                onChange={e => setTeamPhone(e.target.value)}
+                placeholder="+91 98111 00000"
+              />
+            </label>
+            <label style={{ gridColumn: '1/3' }}>
+              Email Address
+              <input
+                type="email"
+                value={teamEmail}
+                onChange={e => setTeamEmail(e.target.value)}
+                placeholder="agent@domain.com"
+              />
+            </label>
+          </div>
+          <div className="modal-actions">
+            <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancel</Button>
+            <Button type="submit" disabled={submitting}>{submitting ? 'Adding...' : 'Attach Sub-Team to Financer'}</Button>
+          </div>
+        </form>
+      </Modal>
+    )
+  }
+
+  // 6. Add Lead Modal with Cascading Chain Reaction Dropdown
   return (
-    <Modal title="Add New Lead" subtitle="Capture prospect details and loan requirements" onClose={onClose}>
+    <Modal title="Add New Lead" subtitle="Capture prospect details and set chain reaction attribution" onClose={onClose}>
       <form onSubmit={submit} className="form">
+        {/* Chain Reaction Attribution Box */}
+        <div className="m-chain-box">
+          <div className="m-chain-box-title">
+            <Icon name="bolt" size={15}/> Chain Reaction Attribution
+          </div>
+
+          <label>
+            Select Financer
+            <select
+              value={selectedFinancerId}
+              onChange={e => {
+                setSelectedFinancerId(e.target.value)
+                setSelectedTeamId('') // Reset team when financer changes
+              }}
+            >
+              <option value="">🏢 Enterprise Direct (No Financer)</option>
+              {financers.map(f => (
+                <option key={f.id} value={f.id}>
+                  💼 {f.name} ({f.teams?.length ? `${f.teams.length} sub-teams` : 'No team - Direct'})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {/* CASCADING DROPDOWN: IF FINANCER HAS TEAMS -> SHOW TEAM DROPDOWN */}
+          {curFinancer && hasTeams && (
+            <label>
+              Select Sub-Team / Sourcing Agent *
+              <select
+                value={selectedTeamId}
+                onChange={e => setSelectedTeamId(e.target.value)}
+              >
+                <option value="">-- Choose Sub-Team under {curFinancer.name} --</option>
+                {curFinancer.teams.map(t => (
+                  <option key={t.id} value={t.id}>
+                    👥 {t.name} ({t.role})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {/* CHAIN VISUAL INDICATOR */}
+          {curFinancer ? (
+            hasTeams ? (
+              <div className="m-chain-indicator">
+                🔗 <strong>Chain Link:</strong> Admin ➔ {curFinancer.name} ➔ {curTeam ? curTeam.name : 'Select Sub-Team above'}
+              </div>
+            ) : (
+              <div className="m-chain-indicator" style={{ background: '#fef3c7', borderColor: '#fde68a', color: '#92400e' }}>
+                ⚡ <strong>Direct Financer Attribution:</strong> {curFinancer.name} has no sub-team. Lead belongs directly to {curFinancer.name}!
+              </div>
+            )
+          ) : (
+            <div className="m-chain-indicator" style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#64748b' }}>
+              🏢 <strong>Enterprise Direct:</strong> Lead belongs directly to central pool.
+            </div>
+          )}
+        </div>
+
+        {/* Standard Lead Inputs */}
         <div className="form-grid">
-          <label>Business name<input type="text" value={leadBusiness} onChange={e => setLeadBusiness(e.target.value)} placeholder="Registered business name" required/></label>
+          <label>Business name *<input type="text" value={leadBusiness} onChange={e => setLeadBusiness(e.target.value)} placeholder="Registered business name" required autoFocus/></label>
           <label>Contact person<input type="text" value={leadPerson} onChange={e => setLeadPerson(e.target.value)} placeholder="Full name"/></label>
           <label>Phone number<input type="text" value={leadPhone} onChange={e => setLeadPhone(e.target.value)} placeholder="+91 98765 43210"/></label>
           <label>Email address<input type="email" value={leadEmail} onChange={e => setLeadEmail(e.target.value)} placeholder="name@business.com"/></label>
@@ -2564,7 +3073,7 @@ function FormModal({
         </div>
         <div className="modal-actions">
           <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancel</Button>
-          <Button type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Add lead'}</Button>
+          <Button type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Add Lead with Chain'}</Button>
         </div>
       </form>
     </Modal>
@@ -2578,6 +3087,9 @@ function FormModal({
 function MobileHome({
   masterWallet,
   partners,
+  financers,
+  activeRole,
+  setActiveRole,
   emis,
   loans,
   expenses,
@@ -2597,6 +3109,9 @@ function MobileHome({
 }: {
   masterWallet: { total_capital: number; available_balance: number; allocated_capital: number }
   partners: Partner[]
+  financers: Financer[]
+  activeRole: UserRole
+  setActiveRole: (r: UserRole) => void
   emis: string[][]
   loans: string[][]
   expenses: string[][]
@@ -2630,7 +3145,12 @@ function MobileHome({
         <div className="mobile-top-row">
           <div>
             <div className="mobile-greeting-date">{today}</div>
-            <div className="mobile-greeting-title">Welcome</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="mobile-greeting-title">Welcome</div>
+              <span className="m-role-pill-badge" style={{ background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                {activeRole.type === 'admin' ? '👑 Admin' : activeRole.type === 'financer' ? `💼 ${activeRole.name.split(' ')[0]}` : `👥 ${activeRole.name.split(' ')[0]}`}
+              </span>
+            </div>
           </div>
           <div className="mobile-top-actions">
             <button
@@ -2656,7 +3176,7 @@ function MobileHome({
               title="Admin Profile"
               onClick={() => setProfileDropdown(!profileDropdown)}
             >
-              AD
+              {activeRole.type === 'admin' ? 'AD' : activeRole.name.split(' ').map(x => x[0]).join('')}
             </button>
           </div>
         </div>
@@ -2675,8 +3195,10 @@ function MobileHome({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid var(--line)' }}>
               <div>
-                <strong style={{ display: 'block', fontSize: '13px' }}>Administrator</strong>
-                <span style={{ fontSize: '10px', color: 'var(--muted)' }}>admin@geetenterprise.in</span>
+                <strong style={{ display: 'block', fontSize: '13px' }}>{activeRole.name}</strong>
+                <span style={{ fontSize: '10px', color: 'var(--muted)' }}>
+                  {activeRole.type === 'admin' ? 'admin@geetenterprise.in' : `${activeRole.type.toUpperCase()} · Chain Access`}
+                </span>
               </div>
               <button
                 type="button"
@@ -2695,18 +3217,73 @@ function MobileHome({
                 Sign out
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '8px' }}>
+
+            {/* Chain Reaction Persona Switcher */}
+            <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--line)' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                Chain Reaction Access Mode:
+              </div>
+              <select
+                value={activeRole.type === 'admin' ? 'admin' : activeRole.type === 'financer' ? `f_${activeRole.financerId}` : `t_${activeRole.teamId}`}
+                onChange={e => {
+                  const val = e.target.value
+                  if (val === 'admin') {
+                    setActiveRole({ type: 'admin', id: 'admin', name: 'Administrator' })
+                    notify('Active Mode: Administrator (Full Central Pool Access)')
+                  } else if (val.startsWith('f_')) {
+                    const fId = val.replace('f_', '')
+                    const f = financers.find(x => x.id === fId)
+                    if (f) {
+                      setActiveRole({ type: 'financer', id: f.id, name: f.name, financerId: f.id, financerName: f.name })
+                      notify(`Active Mode: Financer (${f.name})`)
+                    }
+                  } else if (val.startsWith('t_')) {
+                    const tId = val.replace('t_', '')
+                    for (const f of financers) {
+                      const t = f.teams.find(x => x.id === tId)
+                      if (t) {
+                        setActiveRole({ type: 'team', id: t.id, name: t.name, financerId: f.id, financerName: f.name, teamId: t.id, teamName: t.name })
+                        notify(`Active Mode: Team Agent (${t.name})`)
+                        break
+                      }
+                    }
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '7px 10px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--line)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  background: '#f8fafc',
+                  color: '#0f172a'
+                }}
+              >
+                <option value="admin">👑 Administrator (Full Master Pool)</option>
+                {financers.map(f => (
+                  <optgroup key={f.id} label={`💼 Financer: ${f.name}`}>
+                    <option value={`f_${f.id}`}>Financer: {f.name}</option>
+                    {f.teams.map(t => (
+                      <option key={t.id} value={`t_${t.id}`}>↳ Sub-Team: {t.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '10px' }}>
               <button
                 type="button"
                 onClick={() => { setProfileDropdown(false); navigate('Capital & Partners') }}
-                style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '6px', padding: '6px', fontSize: '10px', cursor: 'pointer', textAlign: 'left' }}
+                style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '6px', padding: '6px', fontSize: '10px', cursor: 'pointer', textAlign: 'left', fontWeight: 600 }}
               >
-                💼 Capital Partners
+                💼 Financers & Teams
               </button>
               <button
                 type="button"
                 onClick={() => { setProfileDropdown(false); navigate('Profit & Loss') }}
-                style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '6px', padding: '6px', fontSize: '10px', cursor: 'pointer', textAlign: 'left' }}
+                style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '6px', padding: '6px', fontSize: '10px', cursor: 'pointer', textAlign: 'left', fontWeight: 600 }}
               >
                 📊 P&L Statement
               </button>
@@ -2969,6 +3546,7 @@ export default function App() {
   const [profile, setProfile] = useState(false)
   const [modal, setModal] = useState<string | null>(null)
   const [modalTargetId, setModalTargetId] = useState<string | undefined>()
+  const [targetFinancerName, setTargetFinancerName] = useState<string>('')
   const [toast, setToast] = useState('')
   const [serverOnline, setServerOnline] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
@@ -2980,6 +3558,8 @@ export default function App() {
     { id: 'u2', name: 'Priya Mehta', role: 'Senior Partner & Investor', theme: 'amber', capitalInvested: 1500000, sharePct: 32.79, grossShare: 155325, expenseShare: 39200, netProfitShare: 116125, roiPct: 7.74, status: 'Profitable' },
     { id: 'u3', name: 'Rohan Khanna', role: 'Capital Partner & Investor', theme: 'cyan', capitalInvested: 1075000, sharePct: 23.50, grossShare: 111319, expenseShare: 28094, netProfitShare: 83225, roiPct: 7.74, status: 'Profitable' }
   ])
+  const [financers, setFinancers] = useState<Financer[]>([])
+  const [activeRole, setActiveRole] = useState<UserRole>({ type: 'admin', id: 'admin', name: 'Administrator' })
   const [pnl, setPnl] = useState<PnlSummary>({
     grossRevenue: 473697,
     interestEarned: 454817,
@@ -3030,15 +3610,22 @@ export default function App() {
           }
         }
 
+        if (d.financers?.length) {
+          setFinancers(d.financers)
+        }
+
         if (d.leads?.length) {
-          setLeads(d.leads.map((l: { id: string; business: string; contact_person: string; phone: string; requirement: number; source: string; status: string }) => [
+          setLeads(d.leads.map((l: { id: string; business: string; contact_person: string; phone: string; requirement: number; source: string; status: string; attribution?: string; financer_name?: string; team_name?: string }) => [
             l.id,
             l.business,
             l.contact_person,
             l.phone,
             money(l.requirement),
             l.source,
-            l.status
+            l.status,
+            l.attribution || 'Admin Direct',
+            l.financer_name || '',
+            l.team_name || ''
           ]))
         }
 
@@ -3150,6 +3737,22 @@ export default function App() {
     }
   }
 
+  const handleDeleteTeam = async (teamId: string, teamName: string) => {
+    if (!confirm(`Are you sure you want to remove sub-team "${teamName}"?`)) return
+    try {
+      const res = await fetch(`/api/financer-teams/${teamId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.success) {
+        notify(`Sub-team "${teamName}" removed successfully.`)
+        syncData()
+      } else {
+        alert(data.error || 'Failed to remove sub-team')
+      }
+    } catch {
+      alert('Network request error removing team')
+    }
+  }
+
   const handleApplyCalc = async (calc: { principal: number; roi: number; tenure: number; emi: number; business: string; leadId?: string }) => {
     try {
       const res = await fetch('/api/loans', {
@@ -3187,12 +3790,21 @@ export default function App() {
     <CapitalAndPartners
       masterWallet={masterWallet}
       partners={partners}
+      financers={financers}
       transactions={transactions}
       openAddCapital={() => { setModalTargetId(undefined); setModal('capital') }}
+      openAddFinancer={() => { setModalTargetId(undefined); setModal('add-financer') }}
+      openAddTeam={(fId, fName) => {
+        setModalTargetId(fId)
+        setTargetFinancerName(fName)
+        setModal('add-team')
+      }}
+      onDeleteTeam={handleDeleteTeam}
     />
   ) : screen === 'Leads' ? (
     <Leads
       leads={leads}
+      financers={financers}
       openAdd={() => { setModalTargetId(undefined); setModal('lead') }}
       convert={leadId => { setModalTargetId(leadId); setModal('convert-lead') }}
     />
@@ -3227,6 +3839,9 @@ export default function App() {
           <MobileHome
             masterWallet={masterWallet}
             partners={partners}
+            financers={financers}
+            activeRole={activeRole}
+            setActiveRole={setActiveRole}
             emis={emis}
             loans={loans}
             expenses={expenses}
@@ -3360,12 +3975,15 @@ export default function App() {
         <FormModal
           type={modal}
           targetId={modalTargetId}
+          targetFinancerName={targetFinancerName}
           targetEmi={payTargetEmi}
           availableBalance={masterWallet.available_balance}
           partners={partners}
+          financers={financers}
+          activeRole={activeRole}
           leads={leads}
-          onClose={() => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null) }}
-          onDone={msg => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null); notify(msg) }}
+          onClose={() => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null); setTargetFinancerName('') }}
+          onDone={msg => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null); setTargetFinancerName(''); notify(msg) }}
         />
       )}
 

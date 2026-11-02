@@ -107,6 +107,17 @@ function initDb() {
       status TEXT NOT NULL DEFAULT 'Completed',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS financer_teams (
+      id TEXT PRIMARY KEY,
+      financer_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'Loan Agent / Sub-Team',
+      phone TEXT DEFAULT '',
+      email TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'Active',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Safe migration helper for existing databases
@@ -117,6 +128,17 @@ function initDb() {
   };
 
   safeAddColumn('wallets', 'capital_invested REAL NOT NULL DEFAULT 0');
+  safeAddColumn('wallets', 'phone TEXT DEFAULT ""');
+  safeAddColumn('wallets', 'email TEXT DEFAULT ""');
+  safeAddColumn('wallets', 'status TEXT DEFAULT "Active"');
+
+  safeAddColumn('leads', 'financer_id TEXT DEFAULT ""');
+  safeAddColumn('leads', 'financer_name TEXT DEFAULT ""');
+  safeAddColumn('leads', 'team_id TEXT DEFAULT ""');
+  safeAddColumn('leads', 'team_name TEXT DEFAULT ""');
+  safeAddColumn('leads', 'attribution TEXT DEFAULT ""');
+  safeAddColumn('leads', 'created_by TEXT DEFAULT "Admin"');
+
   safeAddColumn('loans', 'total_return REAL DEFAULT 0');
   safeAddColumn('loans', 'net_in_hand REAL DEFAULT 0');
   safeAddColumn('loans', 'advance_deducted REAL DEFAULT 0');
@@ -228,6 +250,28 @@ function seedIfEmpty() {
     insertTxn.run('TXN-240308', '08 Mar 2025', 'Office expense', 'Central Balance / Operations', 'Debit', 24600, 'Approved');
     insertTxn.run('TXN-240307', '07 Mar 2025', 'EMI received', 'Patel Foods', 'Credit', 86200, 'Completed');
   }
+
+  // Seed Financer Teams if empty
+  const teamCount = db.prepare('SELECT COUNT(*) as count FROM financer_teams').get().count;
+  if (teamCount === 0) {
+    const insertTeam = db.prepare(`
+      INSERT INTO financer_teams (id, financer_id, name, role, phone, email, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    // Under Amit Sharma (u1):
+    insertTeam.run('tm-1', 'u1', 'Team Alpha (Vikram Malhotra)', 'Senior Acquisition Agent', '+91 98111 44556', 'vikram@sharmacapital.in', 'Active');
+    insertTeam.run('tm-2', 'u1', 'Delhi NCR Direct Agents', 'Field Sourcing Team', '+91 98222 33445', 'delhi.agents@sharmacapital.in', 'Active');
+    // Priya Mehta (u2) has NO team (Direct Financer)
+    // Under Rohan Khanna (u3):
+    insertTeam.run('tm-3', 'u3', 'FastTrack Leads Team', 'Digital Channel Partner', '+91 97333 55667', 'fasttrack@khannacapital.in', 'Active');
+  }
+
+  // Populate sample chain attributions on existing leads if empty
+  try {
+    db.prepare(`UPDATE leads SET financer_id = 'u1', financer_name = 'Amit Sharma', team_id = 'tm-1', team_name = 'Team Alpha (Vikram Malhotra)', attribution = 'Amit Sharma ➔ Team Alpha' WHERE (financer_name IS NULL OR financer_name = '') AND id IN ('LD-1050', 'LD-1047')`).run();
+    db.prepare(`UPDATE leads SET financer_id = 'u2', financer_name = 'Priya Mehta', team_id = '', team_name = '', attribution = 'Priya Mehta (Direct)' WHERE (financer_name IS NULL OR financer_name = '') AND id IN ('LD-1049', 'LD-1042')`).run();
+    db.prepare(`UPDATE leads SET financer_id = 'u3', financer_name = 'Rohan Khanna', team_id = 'tm-3', team_name = 'FastTrack Leads Team', attribution = 'Rohan Khanna ➔ FastTrack Leads' WHERE (financer_name IS NULL OR financer_name = '')`).run();
+  } catch {}
 }
 
 // ---------------------------------------------
@@ -240,6 +284,70 @@ function getMasterWallet() {
 
 function getWallets() {
   return db.prepare('SELECT * FROM wallets ORDER BY capital_invested DESC').all();
+}
+
+function getFinancersWithTeams() {
+  const financers = db.prepare('SELECT * FROM wallets ORDER BY capital_invested DESC').all();
+  return financers.map(f => {
+    const teams = db.prepare('SELECT * FROM financer_teams WHERE financer_id = ? ORDER BY created_at ASC').all(f.id);
+    const leadsCount = db.prepare('SELECT COUNT(*) as count FROM leads WHERE financer_id = ?').get(f.id)?.count || 0;
+    return {
+      ...f,
+      teams,
+      leadsCount
+    };
+  });
+}
+
+function addFinancer({ name, role, phone, email, capitalInvested }) {
+  const count = db.prepare('SELECT COUNT(*) as count FROM wallets').get().count;
+  const newId = `u${count + 1}`;
+  const financerRole = role || 'Financer / Capital Partner';
+  const themes = ['violet', 'amber', 'cyan'];
+  const theme = themes[count % themes.length];
+  const cap = Number(capitalInvested) || 0;
+
+  db.prepare(`
+    INSERT INTO wallets (id, name, role, theme, capital_invested, allocated, available, deployed, recovery, utilization, phone, email, status)
+    VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, 'Active')
+  `).run(newId, name, financerRole, theme, cap, cap, phone || '', email || '');
+
+  if (cap > 0) {
+    db.prepare(`
+      UPDATE master_wallet
+      SET total_capital = total_capital + ?,
+          available_balance = available_balance + ?
+      WHERE id = 1
+    `).run(cap, cap);
+
+    // Log transaction
+    const countTxn = db.prepare('SELECT COUNT(*) as count FROM transactions').get().count;
+    const txnId = `TXN-${240313 + countTxn}`;
+    const now = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+    db.prepare(`
+      INSERT INTO transactions (id, date, description, party, type, amount, status)
+      VALUES (?, ?, 'Financer capital addition', ?, 'Credit', ?, 'Completed')
+    `).run(txnId, dateStr, name, cap);
+  }
+
+  return db.prepare('SELECT * FROM wallets WHERE id = ?').get(newId);
+}
+
+function addFinancerTeam({ financerId, name, role, phone, email }) {
+  const count = db.prepare('SELECT COUNT(*) as count FROM financer_teams').get().count;
+  const id = `tm-${count + 1}`;
+  db.prepare(`
+    INSERT INTO financer_teams (id, financer_id, name, role, phone, email, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'Active')
+  `).run(id, financerId, name, role || 'Loan Agent / Sub-Team', phone || '', email || '');
+  return db.prepare('SELECT * FROM financer_teams WHERE id = ?').get(id);
+}
+
+function deleteFinancerTeam(teamId) {
+  return db.prepare('DELETE FROM financer_teams WHERE id = ?').run(teamId);
 }
 
 function addCapitalInvestment({ partnerId, partnerName, amount, role }) {
@@ -307,9 +415,25 @@ function getLeads() {
 function createLead(lead) {
   const count = db.prepare('SELECT COUNT(*) as count FROM leads').get().count;
   const id = lead.id || `LD-${count + 1043}`;
+
+  const financerId = lead.financer_id || lead.financerId || '';
+  const financerName = lead.financer_name || lead.financerName || '';
+  const teamId = lead.team_id || lead.teamId || '';
+  const teamName = lead.team_name || lead.teamName || '';
+  const createdBy = lead.created_by || lead.createdBy || 'Admin';
+
+  let attribution = 'Admin Direct';
+  if (financerName) {
+    if (teamName) {
+      attribution = `${financerName} ➔ ${teamName}`;
+    } else {
+      attribution = `${financerName} (Direct)`;
+    }
+  }
+
   db.prepare(`
-    INSERT INTO leads (id, business, contact_person, phone, email, requirement, source, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO leads (id, business, contact_person, phone, email, requirement, source, status, financer_id, financer_name, team_id, team_name, attribution, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     lead.business,
@@ -318,7 +442,13 @@ function createLead(lead) {
     lead.email || '',
     Number(lead.requirement) || 0,
     lead.source || 'Referral',
-    lead.status || 'New'
+    lead.status || 'New',
+    financerId,
+    financerName,
+    teamId,
+    teamName,
+    attribution,
+    createdBy
   );
   return db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
 }
@@ -657,6 +787,7 @@ function getInitialData() {
     masterWallet: getMasterWallet(),
     partners: getWallets(),
     wallets: getWallets(),
+    financers: getFinancersWithTeams(),
     leads: getLeads(),
     loans: getLoans(),
     emis: getEmis(),
@@ -672,6 +803,10 @@ module.exports = {
   db,
   getMasterWallet,
   getWallets,
+  getFinancersWithTeams,
+  addFinancer,
+  addFinancerTeam,
+  deleteFinancerTeam,
   addCapitalInvestment,
   getLeads,
   createLead,
