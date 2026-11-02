@@ -94,3 +94,4 @@ If you make modifications locally, you can use these commands before committing:
 
 - `npm run build`: Re-builds the React client and copies the production bundle directly into `server/public/`.
 - `npm start`: Starts the production server (`node server/server.js`).
+
