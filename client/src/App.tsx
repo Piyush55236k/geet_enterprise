@@ -1321,7 +1321,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
               </div>
               <div>
                 <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>Funding Statement</strong>
-                <span style={{ display: 'block', fontSize: '10px', color: 'var(--muted)' }}>Geet Enterprise · Sanction Overview</span>
+                <span style={{ display: 'block', fontSize: '10px', color: 'var(--muted)' }}>Geet Enterprise · Loan Overview</span>
               </div>
             </div>
             <div className="fe-actions-strip">
@@ -1337,7 +1337,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
               <button type="button" className="fe-pill" onClick={() => alert('Auto-reminders enabled for all installments.')} style={{ cursor: 'pointer' }}>
                 🔔 Auto-Reminder
               </button>
-              <button type="button" className="fe-pill green" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Funding Statement for ${calcBusiness}: Loan Sanction: ${money(principalNum)}, Total Return: ${money(totalReturn)}, Net In-Hand: ${money(netInHand)}, ${payableEmis} EMIs of ${money(adjustedPerEmi)}`)}`, '_blank')} style={{ cursor: 'pointer' }}>
+              <button type="button" className="fe-pill green" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Funding Statement for ${calcBusiness}: Loan Amount: ${money(principalNum)}, Total Return: ${money(totalReturn)}, Net In-Hand: ${money(netInHand)}, ${payableEmis} EMIs of ${money(adjustedPerEmi)}`)}`, '_blank')} style={{ cursor: 'pointer' }}>
                 💬 WhatsApp
               </button>
               <button type="button" className="fe-pill" onClick={copyFundingSummary} style={{ cursor: 'pointer' }}>
@@ -1349,7 +1349,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
           <div className="fe-hero-cards">
             <div className="fe-card">
               <div className="fe-card-head">
-                <span>LOAN AMOUNT (SANCTION)</span>
+                <span>LOAN AMOUNT</span>
                 <span className="fe-pill">{formatLakh(principalNum)}</span>
               </div>
               <div className="fe-card-value">{money(principalNum)}</div>
@@ -1510,7 +1510,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                 ? 'Processing Schedule...'
                 : selectedLeadId
                   ? `Convert Lead "${calcBusiness || 'Borrower'}" & Create Loan (${payableEmis} EMIs)`
-                  : `Sanction Loan & Create All ${payableEmis} EMIs`}
+                  : `Convert to Loan & Create All ${payableEmis} EMIs`}
             </button>
           </div>
         </div>
@@ -3315,15 +3315,15 @@ function MobileHome({
         <div className="simple-balance-top">
           <div className="simple-balance-badge">
             <span className="simple-badge-dot"/>
-            <span>उपलब्ध रोकड़ (Cash in Hand)</span>
+            <span>Cash in Hand</span>
           </div>
           <button
             type="button"
             className="simple-add-capital-btn"
             onClick={openAddCapital}
-            title="Add Capital Investment / पूंजी जोड़ें"
+            title="Add Capital / Investment"
           >
-            <Icon name="plus" size={13}/> + पूंजी जोड़ें
+            <Icon name="plus" size={13}/> Add Capital
           </button>
         </div>
 
@@ -3331,7 +3331,7 @@ function MobileHome({
           {money(masterWallet.available_balance)}
         </div>
         <div className="simple-amount-sub">
-          तुरंत लोन देने व खर्च के लिए तैयार रोकड़ बैलेंस
+          Ready cash for loans and expenses
         </div>
 
         {/* 2 Clear Visual Stat Blocks */}
@@ -3343,7 +3343,7 @@ function MobileHome({
           >
             <div className="simple-stat-icon">🏦</div>
             <div className="simple-stat-info">
-              <span className="simple-stat-label">कुल पूंजी (Total Fund)</span>
+              <span className="simple-stat-label">Total Capital</span>
               <strong className="simple-stat-val">{money(masterWallet.total_capital)}</strong>
             </div>
           </div>
@@ -3355,7 +3355,7 @@ function MobileHome({
           >
             <div className="simple-stat-icon">🤝</div>
             <div className="simple-stat-info">
-              <span className="simple-stat-label">मार्केट में लोन ({loans.length})</span>
+              <span className="simple-stat-label">Active Loans ({loans.length})</span>
               <strong className="simple-stat-val">{money(masterWallet.allocated_capital)}</strong>
             </div>
           </div>
@@ -3373,13 +3373,13 @@ function MobileHome({
           <span className="quick-action-label">Add Lead</span>
         </button>
 
-        <button type="button" className="quick-action-item" onClick={openConvertLead} title="Sanction Loan / Convert Lead">
+        <button type="button" className="quick-action-item" onClick={openConvertLead} title="Convert Lead to Loan">
           <div className="quick-action-circle">
             <div className="quick-icon-ring blue">
               <Icon name="bolt" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Sanction</span>
+          <span className="quick-action-label">Convert to Loan</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')} title="EMI Collections & Schedule">
