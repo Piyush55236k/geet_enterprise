@@ -3585,13 +3585,13 @@ function MobileHome({
           <span className="quick-action-label">Convert to Loan</span>
         </button>
 
-        <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')} title="EMI Collections & Schedule">
+        <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')} title="Scheduled EMI's & Payments">
           <div className="quick-action-circle">
             <div className="quick-icon-ring amber">
               <Icon name="payments" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Collections</span>
+          <span className="quick-action-label">EMI's</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={openAddExpense} title="Record Operating Expense">
