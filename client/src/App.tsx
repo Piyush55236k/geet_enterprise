@@ -411,16 +411,24 @@ function Leads({
 
 function Loans({
   loans,
+  leads,
   openDisburse,
   openCreate,
+  openConvertLead,
+  onConvertLead,
   onApplyCalc
 }: {
   loans: string[][]
+  leads: string[][]
   openDisburse: (loanId: string) => void
   openCreate: () => void
-  onApplyCalc: (c: { principal: number; roi: number; tenure: number; emi: number; business: string }) => void
+  openConvertLead: (leadId?: string) => void
+  onConvertLead: (id: string, name: string) => void
+  onApplyCalc: (c: { principal: number; roi: number; tenure: number; emi: number; business: string; leadId?: string }) => void
 }) {
   const [query, setQuery] = useState('')
+  const unconvertedLeads = useMemo(() => leads.filter(l => l[6] !== 'Converted'), [leads])
+  const [selectedLeadId, setSelectedLeadId] = useState('')
 
   // Funding Calculator State (supporting clean inputs & zero scroll wheel bugs)
   const [calcBusiness, setCalcBusiness] = useState('')
@@ -479,14 +487,83 @@ function Loans({
       <PageHeader
         title="Loans Portfolio"
         eyebrow="Lending & Funding Engine"
-        actions={<Button icon="plus" onClick={openCreate}>Create loan</Button>}
+        actions={
+          <div className="header-actions">
+            <Button icon="leads" variant="secondary" onClick={() => openConvertLead()}>
+              Convert lead to loan
+            </Button>
+            <Button icon="plus" onClick={openCreate}>
+              Create direct loan
+            </Button>
+          </div>
+        }
       />
       <div className="metrics-grid four">
         <Metric label="Total Loans Portfolio" value={money(loans.reduce((acc, l) => acc + (Number(l[3].replace(/[^0-9]/g, '')) || 0), 0) || 4500000)} note={`${loans.length} total loans`}/>
         <Metric label="Active Loans" value={String(loans.filter(l => l[7] === 'Active').length)} note="Performing loans" tone="green"/>
         <Metric label="Disbursals Due" value={String(loans.filter(l => l[7] === 'Disbursal due').length)} note="Requires fund release" tone="red"/>
-        <Metric label="Average ROI" value="18.2%" note="Annualized yield" tone="blue"/>
+        <Metric label="Leads Ready to Convert" value={String(unconvertedLeads.length)} note="In acquisition pipeline" tone="blue"/>
       </div>
+
+      {/* Leads Option to Convert to Loan directly in Loans View */}
+      <SectionCard
+        title={`Convert Leads into Loans (${unconvertedLeads.length} Available)`}
+        subtitle="Prospects created in Leads module that can be directly converted into active loan proposals"
+        action={
+          unconvertedLeads.length > 0 ? (
+            <Button icon="leads" variant="secondary" onClick={() => openConvertLead()}>
+              Convert via modal
+            </Button>
+          ) : undefined
+        }
+      >
+        {unconvertedLeads.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
+            All leads have been converted into active loans. You can add new leads in the Leads tab.
+          </div>
+        ) : (
+          <DataTable
+            headers={['Lead ID', 'Business', 'Contact person', 'Phone', 'Requirement', 'Source', 'Status']}
+            rows={unconvertedLeads}
+            action={row => (
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  className="table-action"
+                  style={{
+                    background: 'var(--green)',
+                    color: 'white',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontWeight: 700
+                  }}
+                  onClick={() => onConvertLead(row[0], row[1])}
+                >
+                  Convert to loan →
+                </button>
+                <button
+                  className="table-action"
+                  style={{
+                    background: '#f1f5f9',
+                    color: 'var(--ink)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontWeight: 600
+                  }}
+                  onClick={() => {
+                    setSelectedLeadId(row[0])
+                    setCalcBusiness(row[1])
+                    const raw = row[4].replace(/[^0-9]/g, '')
+                    if (raw) setLoanApproved(raw)
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+                  }}
+                >
+                  Load in Calc
+                </button>
+              </div>
+            )}
+          />
+        )}
+      </SectionCard>
 
       <SectionCard title="Loan Portfolio" subtitle="All customer loans, disbursal status and EMI schedules" action={<SearchFilter placeholder="Search loan ID or customer..." value={query} onChange={setQuery}/>}>
         <DataTable
@@ -518,6 +595,30 @@ function Loans({
       <SectionCard title="Funding Calculator Engine" subtitle="Calculate total return, advance deductions, and net in-hand disbursement">
         <div className="calculator">
           <div className="calc-inputs" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+            <label style={{ gridColumn: '1/3' }}>
+              Select Lead to Convert into Loan (Optional)
+              <select
+                value={selectedLeadId}
+                onChange={e => {
+                  const id = e.target.value
+                  setSelectedLeadId(id)
+                  const found = leads.find(l => l[0] === id)
+                  if (found) {
+                    setCalcBusiness(found[1])
+                    const raw = found[4].replace(/[^0-9]/g, '')
+                    if (raw) setLoanApproved(raw)
+                  }
+                }}
+              >
+                <option value="">-- Direct Manual Entry (Or choose Lead to Convert) --</option>
+                {unconvertedLeads.map(l => (
+                  <option key={l[0]} value={l[0]}>
+                    Convert: {l[1]} ({l[4]} · Contact: {l[2]})
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <label>
               Borrower Business / Customer
               <input
@@ -684,10 +785,11 @@ function Loans({
               roi: Math.round(((totalReturn - principalNum) / (principalNum || 1)) * (365 / daysNum) * 100),
               tenure: Math.max(1, Math.round(daysNum / 30)),
               emi: adjustedPerEmi,
-              business: calcBusiness.trim() || 'New Proposal'
+              business: calcBusiness.trim() || 'New Proposal',
+              leadId: selectedLeadId || undefined
             })}
           >
-            Create this loan proposal
+            {selectedLeadId ? `Convert "${calcBusiness}" to Loan Proposal` : 'Create this loan proposal'}
           </Button>
         </div>
       </SectionCard>
@@ -1059,6 +1161,7 @@ function FormModal({
   targetId,
   availableBalance,
   partners,
+  leads,
   onClose,
   onDone
 }: {
@@ -1066,6 +1169,7 @@ function FormModal({
   targetId?: string
   availableBalance: number
   partners: Partner[]
+  leads: string[][]
   onClose: () => void
   onDone: (message: string) => void
 }) {
@@ -1101,11 +1205,27 @@ function FormModal({
   const [investAmount, setInvestAmount] = useState('500000')
 
   // New Loan Form State
+  const unconvertedLeads = useMemo(() => leads.filter(l => l[6] !== 'Converted'), [leads])
+  const [loanSourceMode, setLoanSourceMode] = useState<'lead' | 'direct'>(type === 'convert-lead' || unconvertedLeads.length > 0 ? 'lead' : 'direct')
+  const [selectedLeadId, setSelectedLeadId] = useState(targetId || (unconvertedLeads[0]?.[0] || ''))
+
   const [loanBusiness, setLoanBusiness] = useState('')
   const [loanCustomer, setLoanCustomer] = useState('')
   const [loanPrincipal, setLoanPrincipal] = useState('750000')
   const [loanRoi, setLoanRoi] = useState('18')
   const [loanTenure, setLoanTenure] = useState('12')
+
+  useEffect(() => {
+    if (loanSourceMode === 'lead' && selectedLeadId) {
+      const found = leads.find(l => l[0] === selectedLeadId)
+      if (found) {
+        setLoanBusiness(found[1])
+        setLoanCustomer(found[2])
+        const rawAmt = found[4].replace(/[^0-9]/g, '')
+        if (rawAmt) setLoanPrincipal(rawAmt)
+      }
+    }
+  }, [selectedLeadId, loanSourceMode, leads])
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -1220,7 +1340,7 @@ function FormModal({
         } else {
           alert(data.error || 'Disbursement failed')
         }
-      } else if (type === 'loan') {
+      } else if (type === 'loan' || type === 'convert-lead') {
         if (!loanBusiness.trim()) {
           alert('Please enter business name')
           setSubmitting(false)
@@ -1235,13 +1355,18 @@ function FormModal({
             principal: Number(loanPrincipal) || 500000,
             roi: Number(loanRoi) || 18,
             tenure: Number(loanTenure) || 12,
-            status: 'Active'
+            status: 'Disbursal due',
+            leadId: (loanSourceMode === 'lead' && selectedLeadId) ? selectedLeadId : undefined
           })
         })
         const data = await res.json()
         if (data.success) {
           onClose()
-          onDone(`Loan created for ${loanBusiness} with EMI schedule!`)
+          onDone(
+            loanSourceMode === 'lead' && selectedLeadId
+              ? `Lead "${loanBusiness}" successfully converted to loan proposal under Disbursal Due!`
+              : `Loan proposal created for ${loanBusiness} with EMI schedule!`
+          )
         } else {
           alert(data.error || 'Failed to create loan')
         }
@@ -1410,10 +1535,92 @@ function FormModal({
     )
   }
 
-  if (type === 'loan') {
+  if (type === 'loan' || type === 'convert-lead') {
     return (
-      <Modal title="Create New Loan" subtitle="Set borrower principal and funding terms" onClose={onClose}>
+      <Modal
+        title={type === 'convert-lead' ? 'Convert Lead to Loan' : 'Create or Convert Loan'}
+        subtitle="Sanction funding by converting an existing lead or creating a direct loan"
+        onClose={onClose}
+      >
         <form onSubmit={submit} className="form">
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setLoanSourceMode('lead')
+                if (!selectedLeadId && unconvertedLeads[0]) {
+                  setSelectedLeadId(unconvertedLeads[0][0])
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '9px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                border: '1px solid var(--line)',
+                background: loanSourceMode === 'lead' ? 'var(--green)' : 'white',
+                color: loanSourceMode === 'lead' ? 'white' : 'var(--ink)',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Convert from Lead ({unconvertedLeads.length} available)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoanSourceMode('direct')
+                setSelectedLeadId('')
+              }}
+              style={{
+                flex: 1,
+                padding: '9px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                border: '1px solid var(--line)',
+                background: loanSourceMode === 'direct' ? 'var(--green)' : 'white',
+                color: loanSourceMode === 'direct' ? 'white' : 'var(--ink)',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Direct Loan Entry
+            </button>
+          </div>
+
+          {loanSourceMode === 'lead' && (
+            <div style={{ marginBottom: '14px', background: '#f8faf8', padding: '12px 14px', border: '1px solid var(--line)', borderRadius: '4px' }}>
+              <label>
+                Select Lead to Convert to Loan
+                <select
+                  value={selectedLeadId}
+                  onChange={e => {
+                    const id = e.target.value
+                    setSelectedLeadId(id)
+                    const found = leads.find(l => l[0] === id)
+                    if (found) {
+                      setLoanBusiness(found[1])
+                      setLoanCustomer(found[2])
+                      const raw = found[4].replace(/[^0-9]/g, '')
+                      if (raw) setLoanPrincipal(raw)
+                    }
+                  }}
+                  required
+                >
+                  <option value="">-- Choose Lead from Pipeline --</option>
+                  {unconvertedLeads.map(l => (
+                    <option key={l[0]} value={l[0]}>
+                      {l[1]} ({l[4]} · Contact: {l[2]} · {l[6]})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div style={{ marginTop: '6px', fontSize: '10px', color: 'var(--green)', fontWeight: 600 }}>
+                ✓ Lead details auto-populated below. Submitting will convert lead and create loan proposal under "Disbursal due".
+              </div>
+            </div>
+          )}
+
           <div className="form-grid">
             <label>Business name<input type="text" value={loanBusiness} onChange={e => setLoanBusiness(e.target.value)} placeholder="Registered business name" required/></label>
             <label>Customer contact<input type="text" value={loanCustomer} onChange={e => setLoanCustomer(e.target.value)} placeholder="Borrower representative"/></label>
@@ -1431,7 +1638,9 @@ function FormModal({
           </div>
           <div className="modal-actions">
             <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancel</Button>
-            <Button type="submit" disabled={submitting}>{submitting ? 'Creating...' : 'Create loan'}</Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Processing...' : loanSourceMode === 'lead' ? 'Convert Lead to Loan Proposal' : 'Create direct loan'}
+            </Button>
           </div>
         </form>
       </Modal>
@@ -1721,7 +1930,7 @@ export default function App() {
     }
   }
 
-  const handleApplyCalc = async (calc: { principal: number; roi: number; tenure: number; emi: number; business: string }) => {
+  const handleApplyCalc = async (calc: { principal: number; roi: number; tenure: number; emi: number; business: string; leadId?: string }) => {
     try {
       const res = await fetch('/api/loans', {
         method: 'POST',
@@ -1733,12 +1942,17 @@ export default function App() {
           roi: calc.roi,
           tenure: calc.tenure,
           emi: calc.emi,
-          status: 'Disbursal due'
+          status: 'Disbursal due',
+          leadId: calc.leadId
         })
       })
       const data = await res.json()
       if (data.success) {
-        notify(`Loan proposal created for ${calc.business} with monthly EMI of ${money(calc.emi)}!`)
+        notify(
+          calc.leadId
+            ? `Lead converted! Loan proposal created for ${calc.business} under Disbursal Due!`
+            : `Loan proposal created for ${calc.business} with monthly EMI of ${money(calc.emi)}!`
+        )
       }
     } catch (e) {
       console.error(e)
@@ -1761,8 +1975,11 @@ export default function App() {
   ) : screen === 'Loans' ? (
     <Loans
       loans={loans}
+      leads={leads}
       openDisburse={id => { setModalTargetId(id); setModal('disburse') }}
       openCreate={() => { setModalTargetId(undefined); setModal('loan') }}
+      openConvertLead={leadId => { setModalTargetId(leadId); setModal('convert-lead') }}
+      onConvertLead={handleConvertLead}
       onApplyCalc={handleApplyCalc}
     />
   ) : screen === 'Scheduled EMIs' ? (
@@ -1894,6 +2111,7 @@ export default function App() {
           targetId={modalTargetId}
           availableBalance={masterWallet.available_balance}
           partners={partners}
+          leads={leads}
           onClose={() => setModal(null)}
           onDone={notify}
         />

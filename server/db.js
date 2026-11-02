@@ -292,7 +292,7 @@ function createLead(lead) {
   return db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
 }
 
-function convertLead(leadId) {
+function convertLead(leadId, customTerms = {}) {
   const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId);
   if (!lead) return null;
 
@@ -301,16 +301,35 @@ function convertLead(leadId) {
   // Automatically create loan proposal with status 'Disbursal due'
   const count = db.prepare('SELECT COUNT(*) as count FROM loans').get().count;
   const loanId = `GE-2025-${String(count + 89).padStart(3, '0')}`;
-  const principal = Number(lead.requirement) || 500000;
-  const roi = 18;
-  const tenure = 12;
+  const principal = Number(customTerms.principal || lead.requirement) || 500000;
+  const roi = Number(customTerms.roi) || 18;
+  const tenure = Number(customTerms.tenure) || 12;
   const monthlyRate = roi / 1200;
-  const emi = Math.round(principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1));
+  const emi = customTerms.emi
+    ? Number(customTerms.emi)
+    : Math.round(principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1));
 
   db.prepare(`
     INSERT INTO loans (id, business, customer, principal, roi, tenure, emi, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'Disbursal due')
   `).run(loanId, lead.business, lead.contact_person || lead.business, principal, roi, tenure, emi);
+
+  // Generate initial EMI schedule for the loan
+  const countEmis = db.prepare('SELECT COUNT(*) as count FROM emis').get().count;
+  const insertEmi = db.prepare(`
+    INSERT INTO emis (id, due_date, customer, loan_id, principal, interest, amount, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'Upcoming')
+  `);
+  const principalPart = Math.round(principal / tenure);
+  const interestPart = emi - principalPart;
+
+  const today = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let i = 1; i <= Math.min(tenure, 3); i++) {
+    const dueDate = new Date(today.getFullYear(), today.getMonth() + i, 15);
+    const dateStr = `${dueDate.getDate()} ${months[dueDate.getMonth()]} ${dueDate.getFullYear()}`;
+    insertEmi.run(`EMI-${countEmis + i}`, dateStr, lead.business, loanId, principalPart, interestPart, emi);
+  }
 
   return { lead: db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId), loanId };
 }
@@ -343,6 +362,11 @@ function createLoan(loan) {
     emi,
     loan.status || 'Active'
   );
+
+  // If this loan was created from an existing lead, mark the lead as Converted
+  if (loan.leadId) {
+    db.prepare("UPDATE leads SET status = 'Converted' WHERE id = ?").run(loan.leadId);
+  }
 
   // Generate initial EMI schedule for the loan
   const countEmis = db.prepare('SELECT COUNT(*) as count FROM emis').get().count;

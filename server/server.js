@@ -136,7 +136,7 @@ app.post('/api/leads', (req, res) => {
 
 app.patch('/api/leads/:id/convert', (req, res) => {
   try {
-    const result = db.convertLead(req.params.id);
+    const result = db.convertLead(req.params.id, req.body);
     if (!result) {
       return res.status(404).json({ success: false, error: 'Lead not found.' });
     }
@@ -158,7 +158,7 @@ app.get('/api/loans', (req, res) => {
 
 app.post('/api/loans', (req, res) => {
   try {
-    const { business, customer, principal, roi, tenure, emi, status } = req.body;
+    const { business, customer, principal, roi, tenure, emi, status, leadId } = req.body;
     if (!business && !customer) {
       return res.status(400).json({ success: false, error: 'Customer / business name is required.' });
     }
@@ -169,7 +169,8 @@ app.post('/api/loans', (req, res) => {
       roi: Number(roi) || 18,
       tenure: Number(tenure) || 12,
       emi: Number(emi) || 0,
-      status: status || 'Active'
+      status: status || 'Active',
+      leadId
     });
     res.status(201).json({ success: true, data: created });
   } catch (error) {
