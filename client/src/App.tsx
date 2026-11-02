@@ -703,7 +703,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
           <div className="fe-header">
             <div>
               <div className="fe-title">Funding Calculator</div>
-              <div className="fe-subtitle">Jain Financial Services Calculation Engine</div>
+              <div className="fe-subtitle">Geet Enterprise Calculation Engine</div>
             </div>
             <button type="button" className="fe-pill" onClick={handleReset} style={{ cursor: 'pointer' }}>
               ↺ Reset
@@ -848,20 +848,20 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                 ✕ Clear
               </button>
             </div>
-            <div style={{ background: '#161e2b', border: '1px solid #28374d', borderRadius: '4px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '4px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <span style={{ fontSize: '9px', color: '#94a3b8', display: 'block' }}>Selected Date:</span>
-                <strong style={{ fontSize: '12px', color: '#e5a93c' }}>{formatFullDate(startDate)}</strong>
+                <span style={{ fontSize: '10px', color: 'var(--muted)', display: 'block' }}>Selected Date:</span>
+                <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{formatFullDate(startDate)}</strong>
               </div>
               <input
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                style={{ width: '130px', height: '32px', fontSize: '11px' }}
+                style={{ width: '135px', height: '32px', fontSize: '12px' }}
               />
             </div>
             <div style={{ display: 'flex', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
-              <span style={{ fontSize: '9px', color: '#94a3b8' }}>Shortcuts:</span>
+              <span style={{ fontSize: '10px', color: 'var(--muted)' }}>Shortcuts:</span>
               {(['today', 'tomorrow', '1st', '15th'] as const).map(sc => (
                 <button
                   key={sc}
@@ -908,15 +908,15 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                   onChange={e => setNetInHandTarget(cleanNumberInput(e.target.value))}
                   placeholder="800000"
                 />
-                <div style={{ marginTop: '8px', background: '#161e2b', border: '1px solid #2a374c', borderRadius: '4px', padding: '8px 12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#cbd5e1' }}>
+                <div style={{ marginTop: '8px', background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '4px', padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ink)' }}>
                     <span>Advance Deducted:</span>
-                    <strong style={{ color: '#e5a93c' }}>{money(advanceAmount)}</strong>
+                    <strong style={{ color: 'var(--green-dark)', fontWeight: 700 }}>{money(advanceAmount)}</strong>
                   </div>
-                  <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '3px' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '3px' }}>
                     Formula: Loan ({money(principalNum)}) − PF ({money(pfAmount)}) − Net Hand ({money(Number(netInHandTarget) || 0)})
                   </div>
-                  <div style={{ fontSize: '10px', color: '#34d399', fontWeight: 600, marginTop: '5px' }}>
+                  <div style={{ fontSize: '11px', color: '#15803d', fontWeight: 600, marginTop: '5px' }}>
                     Repayment: 1 EMI removed → {payableEmis} EMIs @ {money(adjustedPerEmi)}/EMI
                   </div>
                 </div>
@@ -953,14 +953,14 @@ Total Repayment Balance: ${money(remainingRepayment)}`
 
         {/* Right Output & Schedule Column */}
         <div className="fe-right">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingBottom: '12px', borderBottom: '1px solid #232c3d' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#252f40', color: '#e5a93c', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '12px' }}>
-                JF
+              <div style={{ width: '32px', height: '32px', borderRadius: '4px', background: 'var(--green-soft)', color: 'var(--green-dark)', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '12px' }}>
+                GE
               </div>
               <div>
-                <strong style={{ fontSize: '13px', color: '#ffffff' }}>Funding Statement</strong>
-                <span style={{ display: 'block', fontSize: '9px', color: '#8b9bb4' }}>Jain Financial Services • 9...</span>
+                <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>Funding Statement</strong>
+                <span style={{ display: 'block', fontSize: '10px', color: 'var(--muted)' }}>Geet Enterprise · Sanction Overview</span>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -996,10 +996,10 @@ Total Repayment Balance: ${money(remainingRepayment)}`
             <div className="fe-card">
               <div className="fe-card-head">
                 <span>TOTAL RETURN AMOUNT</span>
-                <span className="fe-pill">Rate {multiplierNum}%</span>
+                <span className="fe-pill green">Rate {multiplierNum}%</span>
               </div>
-              <div className="fe-card-value gold">{money(totalReturn)}</div>
-              <div style={{ fontSize: '9px', color: '#8fa0ba', marginTop: '2px' }}>{formatLakh(totalReturn)}</div>
+              <div className="fe-card-value" style={{ color: 'var(--green-dark)' }}>{money(totalReturn)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '2px' }}>{formatLakh(totalReturn)}</div>
             </div>
           </div>
 
@@ -1018,16 +1018,16 @@ Total Repayment Balance: ${money(remainingRepayment)}`
             </div>
             <div className="fe-stat-tile">
               <span>PER INSTALMENT</span>
-              <strong style={{ color: '#e5a93c' }}>{money(adjustedPerEmi)}</strong>
+              <strong style={{ color: 'var(--green-dark)' }}>{money(adjustedPerEmi)}</strong>
             </div>
           </div>
 
           <div className="fe-split-bar">
             <div>
-              <span style={{ fontSize: '9px', color: '#8fa0ba', display: 'block' }}>Advance Deduction & Repayment Split</span>
+              <span style={{ fontSize: '10px', color: 'var(--muted)', display: 'block' }}>Advance Deduction & Repayment Split</span>
               <div style={{ display: 'flex', gap: '14px', marginTop: '3px' }}>
                 <span>Active EMIs: <strong>{payableEmis} Instalments ({deductedEmis} deducted)</strong></span>
-                <span>Adjusted Per EMI: <strong style={{ color: '#e5a93c' }}>{money(adjustedPerEmi)}</strong></span>
+                <span>Adjusted Per EMI: <strong style={{ color: 'var(--green-dark)' }}>{money(adjustedPerEmi)}</strong></span>
                 <span>Remaining Repayment: <strong>{money(remainingRepayment)}</strong></span>
               </div>
             </div>
@@ -1050,8 +1050,8 @@ Total Repayment Balance: ${money(remainingRepayment)}`
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div>
-                <strong style={{ fontSize: '12px', color: '#e5a93c' }}>EMI Schedule ({schedule.length} Payable Instalments)</strong>
-                <span style={{ display: 'block', fontSize: '9px', color: '#8fa0ba' }}>
+                <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>EMI Schedule ({schedule.length} Payable Instalments)</strong>
+                <span style={{ display: 'block', fontSize: '10px', color: 'var(--muted)' }}>
                   Starting {startDate || 'Today'} • Every {freqNum} Days • ({deductedEmis} Advance EMI Deducted Upfront)
                 </span>
               </div>
@@ -1064,7 +1064,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
               />
             </div>
 
-            <div style={{ maxHeight: '230px', overflowY: 'auto', border: '1px solid #232c3d', borderRadius: '4px' }}>
+            <div style={{ maxHeight: '230px', overflowY: 'auto', border: '1px solid var(--line)', borderRadius: '4px', background: '#ffffff' }}>
               <table className="fe-schedule-table">
                 <thead>
                   <tr>
@@ -1081,7 +1081,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                     <tr key={item.num}>
                       <td>{item.num}</td>
                       <td>{item.dueDate}</td>
-                      <td style={{ fontWeight: 700, color: '#f1f5f9' }}>{money(item.amount)}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--ink)' }}>{money(item.amount)}</td>
                       <td><span className="fe-badge-scheduled">Scheduled</span></td>
                       <td>{money(item.cumulativePaid)}</td>
                       <td>{money(item.balance)}</td>
@@ -1090,42 +1090,42 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                 </tbody>
               </table>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#8fa0ba', marginTop: '6px', padding: '0 4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--muted)', marginTop: '6px', padding: '0 4px' }}>
               <span>Showing {filteredSchedule.length} of {schedule.length} instalments</span>
-              <span style={{ color: '#e5a93c', fontWeight: 700 }}>Total Repayment: {money(remainingRepayment)}</span>
+              <span style={{ color: 'var(--green-dark)', fontWeight: 700 }}>Total Repayment: {money(remainingRepayment)}</span>
             </div>
           </div>
 
-          <div style={{ background: '#161e2b', border: '1px solid #263147', borderRadius: '6px', padding: '12px 14px' }}>
-            <div style={{ fontSize: '11px', color: '#e5a93c', fontWeight: 700, marginBottom: '8px' }}>
+          <div style={{ background: '#ffffff', border: '1px solid var(--line)', borderRadius: '6px', padding: '12px 14px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ink)', fontWeight: 700, marginBottom: '8px' }}>
               Financial Statements and Distributions
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#8fa0ba', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--muted)', marginBottom: '4px' }}>
                   <span>Disbursement Ratio</span>
-                  <span>{money(principalNum)} Total</span>
+                  <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{money(principalNum)} Total</span>
                 </div>
-                <div style={{ height: '8px', background: '#252f40', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+                <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
                   <span style={{ width: `${(netInHand / (principalNum || 1)) * 100}%`, background: '#10b981' }} title="Net Hand"/>
                   <span style={{ width: `${(pfAmount / (principalNum || 1)) * 100}%`, background: '#f59e0b' }} title="PF"/>
                   <span style={{ width: `${(advanceAmount / (principalNum || 1)) * 100}%`, background: '#6366f1' }} title="Advance"/>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: '#8fa0ba', marginTop: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--muted)', marginTop: '3px' }}>
                   <span>Net Hand: {money(netInHand)}</span>
                   <span>Advance: {money(advanceAmount)}</span>
                 </div>
               </div>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#8fa0ba', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--muted)', marginBottom: '4px' }}>
                   <span>Repayment Composition</span>
-                  <span>{money(totalReturn)}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{money(totalReturn)}</span>
                 </div>
-                <div style={{ height: '8px', background: '#252f40', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+                <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
                   <span style={{ width: `${(principalNum / (totalReturn || 1)) * 100}%`, background: '#3b82f6' }} title="Principal"/>
-                  <span style={{ width: `${((totalReturn - principalNum) / (totalReturn || 1)) * 100}%`, background: '#e5a93c' }} title="Rate Markup"/>
+                  <span style={{ width: `${((totalReturn - principalNum) / (totalReturn || 1)) * 100}%`, background: 'var(--green)' }} title="Rate Markup"/>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: '#8fa0ba', marginTop: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--muted)', marginTop: '3px' }}>
                   <span>Principal: {money(principalNum)}</span>
                   <span>Markup: {money(totalReturn - principalNum)}</span>
                 </div>
@@ -1144,15 +1144,15 @@ Total Repayment Balance: ${money(remainingRepayment)}`
               onClick={submitFundingPlan}
               disabled={submitting}
               style={{
-                background: 'linear-gradient(135deg, #e5a93c, #c9881a)',
-                color: '#0f1319',
+                background: 'var(--green)',
+                color: '#ffffff',
                 border: 0,
                 borderRadius: '4px',
                 padding: '10px 22px',
                 fontSize: '12px',
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(229, 169, 60, 0.3)'
+                boxShadow: '0 2px 6px rgba(91, 67, 214, 0.25)'
               }}
             >
               {submitting
@@ -1897,7 +1897,7 @@ function FormModal({
       <Modal
         large
         title="Convert Lead to Loan — Funding Engine"
-        subtitle="Jain Financial Services Calculation Engine · All EMIs generated into schedule"
+        subtitle="Geet Enterprise Calculation Engine · All EMIs generated into schedule"
         onClose={onClose}
       >
         <div style={{ padding: '16px 20px' }}>
