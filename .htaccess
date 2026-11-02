@@ -1,0 +1,24 @@
+# -------------------------------------------------------------
+# Geet Enterprise - Hostinger Apache / LiteSpeed Configuration
+# -------------------------------------------------------------
+RewriteEngine On
+
+# 1. Enforce HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 2. Protect sensitive files (.env, .sqlite, package configs)
+<FilesMatch "(\.(sqlite|env|log)|package\.json|package-lock\.json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 3. Allow direct delivery of uploaded receipts & proofs
+RewriteRule ^uploads/(.*)$ /server/uploads/$1 [L]
+
+# 4. Reverse Proxy to Node.js server (if configured with custom port)
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+</IfModule>

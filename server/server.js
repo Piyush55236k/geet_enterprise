@@ -21,10 +21,18 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir));
 
-// Serve built frontend assets
-const clientDist = path.join(__dirname, '../client/dist');
-if (fs.existsSync(clientDist)) {
-  app.use(express.static(clientDist));
+// Serve built frontend assets (supports hPanel production, standalone upload, and monorepo)
+const possibleStaticDirs = [
+  path.join(__dirname, 'public'),
+  path.join(__dirname, '../client/dist'),
+  path.join(__dirname, 'dist'),
+  path.join(__dirname, '../dist')
+];
+
+let staticDir = possibleStaticDirs.find(dir => fs.existsSync(dir) && fs.existsSync(path.join(dir, 'index.html')));
+
+if (staticDir) {
+  app.use(express.static(staticDir));
 }
 
 // Multer Storage Configuration
@@ -399,9 +407,11 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ success: false, error: 'Endpoint not found' });
   }
-  const clientIndex = path.join(__dirname, '../client/dist/index.html');
-  if (fs.existsSync(clientIndex)) {
-    return res.sendFile(clientIndex);
+  if (staticDir) {
+    const indexPath = path.join(staticDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
   }
   next();
 });
