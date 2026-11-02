@@ -14,7 +14,8 @@ type IconName =
   | 'grid' | 'wallet' | 'userWallet' | 'leads' | 'loans' | 'calendar'
   | 'expense' | 'chart' | 'transaction' | 'bell' | 'search' | 'plus'
   | 'arrowUp' | 'arrowDown' | 'chevron' | 'download' | 'filter' | 'logout'
-  | 'menu' | 'close' | 'check' | 'upload' | 'arrowRight'
+  | 'menu' | 'close' | 'check' | 'upload' | 'arrowRight' | 'arrowLeft'
+  | 'home' | 'cards' | 'activity' | 'dots' | 'palette' | 'transfer' | 'bills' | 'exchange' | 'eye' | 'eyeOff'
 
 const iconPaths: Record<IconName, ReactNode> = {
   grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>,
@@ -40,6 +41,17 @@ const iconPaths: Record<IconName, ReactNode> = {
   check: <path d="m5 12 4 4L19 6"/>,
   upload: <><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 15v5h16v-5"/></>,
   arrowRight: <path d="M5 12h14m-5-5 5 5-5 5"/>,
+  arrowLeft: <path d="M19 12H5m5 5-5-5 5-5"/>,
+  home: <><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
+  cards: <><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></>,
+  activity: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>,
+  dots: <><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></>,
+  palette: <path d="M12 2a10 10 0 0 0-10 10c0 5.5 4.5 10 10 10a2 2 0 0 0 2-2c0-.5-.2-1-.5-1.4-.3-.4-.5-.9-.5-1.6 0-1.1.9-2 2-2h2.4c3.3 0 6-2.7 6-6 0-5.5-5.1-7-11.4-7Z"/>,
+  transfer: <><path d="M17 3v14m0 0 4-4m-4 4-4-4"/><path d="M7 21V7m0 0-4 4m4-4 4 4"/></>,
+  bills: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></>,
+  exchange: <path d="M4 17h16m-4-4 4 4-4 4M20 7H4m4-4-4 4 4 4"/>,
+  eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
+  eyeOff: <><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/></>,
 }
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
@@ -2199,6 +2211,373 @@ function FormModal({
 }
 
 // -------------------------------------------------------------
+// MOBILE BANKING HOME VIEW (DIRECTLY MATCHING SCREENSHOT)
+// -------------------------------------------------------------
+
+function MobileHome({
+  masterWallet,
+  partners,
+  emis,
+  loans,
+  expenses,
+  transactions,
+  pnl,
+  openAddLead,
+  openConvertLead,
+  openAddExpense,
+  openAddCapital,
+  navigate,
+  balanceRevealed,
+  setBalanceRevealed,
+  themeMode,
+  setThemeMode,
+  notify,
+  onLogout
+}: {
+  masterWallet: { total_capital: number; available_balance: number; allocated_capital: number }
+  partners: Partner[]
+  emis: string[][]
+  loans: string[][]
+  expenses: string[][]
+  transactions: string[][]
+  pnl: PnlSummary
+  openAddLead: () => void
+  openConvertLead: () => void
+  openAddExpense: () => void
+  openAddCapital: () => void
+  navigate: (screen: Screen) => void
+  balanceRevealed: boolean
+  setBalanceRevealed: (v: boolean) => void
+  themeMode: string
+  setThemeMode: (m: 'theme-violet' | 'theme-amber' | 'theme-cyan') => void
+  notify: (msg: string) => void
+  onLogout: () => void
+}) {
+  const [profileDropdown, setProfileDropdown] = useState(false)
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })
+
+  const cycleTheme = () => {
+    const next = themeMode === 'theme-violet' ? 'theme-amber' : themeMode === 'theme-amber' ? 'theme-cyan' : 'theme-violet'
+    setThemeMode(next as 'theme-violet' | 'theme-amber' | 'theme-cyan')
+    notify(`Color theme changed to ${next.replace('theme-', '')}`)
+  }
+
+  return (
+    <div>
+      {/* 1. Mobile Top Header directly matching screenshot */}
+      <div className="mobile-top-header">
+        <div className="mobile-top-row">
+          <div>
+            <div className="mobile-greeting-date">{today}</div>
+            <div className="mobile-greeting-title">Welcome</div>
+          </div>
+          <div className="mobile-top-actions">
+            <button
+              type="button"
+              className="mobile-round-btn"
+              title="Switch Color Theme"
+              onClick={cycleTheme}
+            >
+              <Icon name="palette" size={17}/>
+            </button>
+            <button
+              type="button"
+              className="mobile-round-btn"
+              title="Notifications"
+              onClick={() => notify('3 unread system alerts: All funds, loans & collections synced')}
+            >
+              <Icon name="bell" size={17}/>
+              <span className="mobile-bell-badge">3</span>
+            </button>
+            <button
+              type="button"
+              className="mobile-round-btn avatar-btn"
+              title="Admin Profile"
+              onClick={() => setProfileDropdown(!profileDropdown)}
+            >
+              AD
+            </button>
+          </div>
+        </div>
+
+        {profileDropdown && (
+          <div
+            style={{
+              marginTop: '12px',
+              background: '#ffffff',
+              borderRadius: '16px',
+              padding: '12px 14px',
+              color: 'var(--ink)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              border: '1px solid var(--line)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid var(--line)' }}>
+              <div>
+                <strong style={{ display: 'block', fontSize: '13px' }}>Administrator</strong>
+                <span style={{ fontSize: '10px', color: 'var(--muted)' }}>admin@geetenterprise.in</span>
+              </div>
+              <button
+                type="button"
+                onClick={onLogout}
+                style={{
+                  background: '#fef2f2',
+                  color: '#dc2626',
+                  border: '1px solid #fecaca',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '8px' }}>
+              <button
+                type="button"
+                onClick={() => { setProfileDropdown(false); navigate('Capital & Partners') }}
+                style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '6px', padding: '6px', fontSize: '10px', cursor: 'pointer', textAlign: 'left' }}
+              >
+                💼 Capital Partners
+              </button>
+              <button
+                type="button"
+                onClick={() => { setProfileDropdown(false); navigate('Profit & Loss') }}
+                style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '6px', padding: '6px', fontSize: '10px', cursor: 'pointer', textAlign: 'left' }}
+              >
+                📊 P&L Statement
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Card Carousel matching reference image */}
+      <div className="mobile-card-carousel">
+        {/* Main Bank Card */}
+        <div className="mobile-bank-card">
+          <div className="mobile-card-decor"/>
+          <div className="mobile-card-head">
+            <span className="mobile-card-title">Savings Account · Master Capital</span>
+            <button
+              type="button"
+              className="mobile-card-options-btn"
+              title="Card options"
+              onClick={openAddCapital}
+            >
+              <Icon name="dots" size={16}/>
+            </button>
+          </div>
+
+          <div className="mobile-card-mid">
+            <button
+              type="button"
+              className="mobile-balance-pill"
+              onClick={() => setBalanceRevealed(!balanceRevealed)}
+            >
+              <Icon name={balanceRevealed ? 'eyeOff' : 'eye'} size={14}/>
+              {balanceRevealed ? 'Hide Balance' : 'Click for Balance'}
+            </button>
+
+            {balanceRevealed ? (
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'Manrope', color: '#ffffff' }}>
+                  {money(masterWallet.available_balance)}
+                </div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.75)', marginTop: '2px' }}>
+                  Total Pool: {money(masterWallet.total_capital)} · Deployed: {money(masterWallet.allocated_capital)}
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '3px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>
+                ••••••••••
+              </div>
+            )}
+          </div>
+
+          <div className="mobile-card-foot">
+            <span className="mobile-card-num">1234  5678  1234  5661</span>
+            <span className="mobile-card-expiry">08 / 25</span>
+          </div>
+        </div>
+
+        {/* Secondary Card Peek */}
+        <div
+          className="mobile-bank-card secondary-card"
+          onClick={() => navigate('Loans')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="mobile-card-decor"/>
+          <div className="mobile-card-head">
+            <span className="mobile-card-title">Active Loans Portfolio</span>
+            <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+              {loans.length} Loans
+            </span>
+          </div>
+          <div className="mobile-card-mid">
+            <div style={{ fontSize: '20px', fontWeight: 800, fontFamily: 'Manrope' }}>
+              {money(masterWallet.allocated_capital)}
+            </div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+              130% Multiplier Sanction Engine
+            </div>
+          </div>
+          <div className="mobile-card-foot">
+            <span className="mobile-card-num">GEET •••• LOAN</span>
+            <span className="mobile-card-expiry">FY 24/25</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. 4 Circular Quick Action Buttons from Screenshot */}
+      <div className="mobile-quick-actions">
+        <button type="button" className="quick-action-item" onClick={openAddLead}>
+          <div className="quick-action-circle">
+            <div className="quick-icon-ring green">
+              <Icon name="transfer" size={16}/>
+            </div>
+          </div>
+          <span className="quick-action-label">Transfer</span>
+        </button>
+
+        <button type="button" className="quick-action-item" onClick={openConvertLead}>
+          <div className="quick-action-circle">
+            <div className="quick-icon-ring red">
+              <Icon name="arrowDown" size={16}/>
+            </div>
+          </div>
+          <span className="quick-action-label">Request</span>
+        </button>
+
+        <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')}>
+          <div className="quick-action-circle">
+            <div className="quick-icon-ring blue">
+              <Icon name="exchange" size={16}/>
+            </div>
+          </div>
+          <span className="quick-action-label">Exchange</span>
+        </button>
+
+        <button type="button" className="quick-action-item" onClick={openAddExpense}>
+          <div className="quick-action-circle">
+            <div className="quick-icon-ring amber">
+              <Icon name="bills" size={16}/>
+            </div>
+          </div>
+          <span className="quick-action-label">Bills</span>
+        </button>
+      </div>
+
+      {/* 4. Recent Activity Section from Screenshot */}
+      <div className="mobile-activity-section">
+        <div className="mobile-activity-head">
+          <span className="mobile-activity-title">Recent Activity</span>
+          <button
+            type="button"
+            className="mobile-activity-link"
+            onClick={() => navigate('Transactions')}
+          >
+            View All
+          </button>
+        </div>
+
+        {/* Activity item 1: Bill Payment / Expense */}
+        <div
+          className="mobile-activity-item"
+          onClick={openAddExpense}
+        >
+          <div className="mobile-act-icon red">
+            G
+          </div>
+          <div className="mobile-act-details">
+            <div className="mobile-act-name">Google Ads Marketing</div>
+            <div className="mobile-act-date">14th March 2026 · Operating Expense</div>
+          </div>
+          <div className="mobile-act-amount-col">
+            <div className="mobile-act-amt debit">-$150.55</div>
+            <div className="mobile-act-badge">Bill Payment</div>
+          </div>
+        </div>
+
+        {/* Activity item 2: EMI Collection */}
+        <div
+          className="mobile-activity-item"
+          onClick={() => navigate('Scheduled EMIs')}
+        >
+          <div className="mobile-act-icon green">
+            <Icon name="arrowUp" size={16}/>
+          </div>
+          <div className="mobile-act-details">
+            <div className="mobile-act-name">Shree Balaji Traders</div>
+            <div className="mobile-act-date">2 Nov 2026 · EMI Received</div>
+          </div>
+          <div className="mobile-act-amount-col">
+            <div className="mobile-act-amt credit">+₹51,038</div>
+            <div className="mobile-act-badge">EMI Credited</div>
+          </div>
+        </div>
+
+        {/* Activity item 3: Loan Sanction */}
+        <div
+          className="mobile-activity-item"
+          onClick={() => navigate('Loans')}
+        >
+          <div className="mobile-act-icon amber">
+            <Icon name="loans" size={16}/>
+          </div>
+          <div className="mobile-act-details">
+            <div className="mobile-act-name">Bansal Steel Works</div>
+            <div className="mobile-act-date">2 Nov 2026 · Loan Disbursement</div>
+          </div>
+          <div className="mobile-act-amount-col">
+            <div className="mobile-act-amt debit">-₹18,00,000</div>
+            <div className="mobile-act-badge">Disbursed</div>
+          </div>
+        </div>
+
+        {/* Activity item 4: Investor Capital Added */}
+        <div
+          className="mobile-activity-item"
+          onClick={() => navigate('Capital & Partners')}
+        >
+          <div className="mobile-act-icon blue">
+            <Icon name="wallet" size={16}/>
+          </div>
+          <div className="mobile-act-details">
+            <div className="mobile-act-name">Priya Mehta Capital</div>
+            <div className="mobile-act-date">1 Nov 2026 · Investor Equity</div>
+          </div>
+          <div className="mobile-act-amount-col">
+            <div className="mobile-act-amt credit">+₹15,00,000</div>
+            <div className="mobile-act-badge">Pool Equity</div>
+          </div>
+        </div>
+
+        {/* Activity item 5: Lead Qualified */}
+        <div
+          className="mobile-activity-item"
+          onClick={() => navigate('Leads')}
+        >
+          <div className="mobile-act-icon green">
+            <Icon name="leads" size={16}/>
+          </div>
+          <div className="mobile-act-details">
+            <div className="mobile-act-name">Aarav Industries</div>
+            <div className="mobile-act-date">28 Oct 2026 · Lead Qualified</div>
+          </div>
+          <div className="mobile-act-amount-col">
+            <div className="mobile-act-amt credit">₹12,00,000</div>
+            <div className="mobile-act-badge">Ready to Convert</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// -------------------------------------------------------------
 // LOGIN (SINGLE-USER ADMINISTRATOR ACCESS)
 // -------------------------------------------------------------
 
@@ -2265,6 +2644,9 @@ function Login({ onLogin }: { onLogin: () => void }) {
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(true)
+  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('mobile')
+  const [balanceRevealed, setBalanceRevealed] = useState(false)
+  const [themeMode, setThemeMode] = useState<'theme-violet' | 'theme-amber' | 'theme-cyan'>('theme-violet')
   const [screen, setScreen] = useState<Screen>('Dashboard')
   const [sidebar, setSidebar] = useState(false)
   const [profile, setProfile] = useState(false)
@@ -2520,8 +2902,177 @@ export default function App() {
     <Transactions transactions={transactions}/>
   )
 
+  if (viewMode === 'mobile') {
+    return (
+      <div className={`mobile-simulator-stage ${themeMode}`}>
+        {/* Desktop control bar above phone */}
+        <div className="simulator-toolbar">
+          <strong>
+            <Icon name="cards" size={15}/> Geet Enterprise Mobile View
+          </strong>
+          <div className="simulator-mode-switch">
+            <button
+              type="button"
+              className={viewMode === 'mobile' ? 'active' : ''}
+              onClick={() => setViewMode('mobile')}
+            >
+              📱 Mobile
+            </button>
+            <button
+              type="button"
+              className={viewMode === 'desktop' ? 'active' : ''}
+              onClick={() => setViewMode('desktop')}
+            >
+              🖥 Desktop
+            </button>
+          </div>
+        </div>
+
+        {/* Smartphone Device Frame */}
+        <div className="phone-device">
+          {/* Top Speaker Notch */}
+          <div className="phone-notch">
+            <div className="phone-notch-speaker"/>
+            <div className="phone-notch-camera"/>
+          </div>
+
+          {/* Status Bar */}
+          <div className="phone-status-bar">
+            <span>9:41</span>
+            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+              <span style={{ fontSize: '9px' }}>5G</span>
+              <span style={{ width: '16px', height: '9px', border: '1px solid white', borderRadius: '2px', display: 'inline-block', position: 'relative' }}>
+                <span style={{ position: 'absolute', inset: '1px', background: '#22c55e', borderRadius: '1px' }}/>
+              </span>
+            </div>
+          </div>
+
+          {/* Inner Phone Screen */}
+          <div className="phone-screen">
+            {screen === 'Dashboard' ? (
+              <MobileHome
+                masterWallet={masterWallet}
+                partners={partners}
+                emis={emis}
+                loans={loans}
+                expenses={expenses}
+                transactions={transactions}
+                pnl={pnl}
+                openAddLead={() => { setModalTargetId(undefined); setModal('lead') }}
+                openConvertLead={() => { setModalTargetId(undefined); setModal('convert-lead') }}
+                openAddExpense={() => { setModalTargetId(undefined); setModal('expense') }}
+                openAddCapital={() => { setModalTargetId(undefined); setModal('capital') }}
+                navigate={navigate}
+                balanceRevealed={balanceRevealed}
+                setBalanceRevealed={setBalanceRevealed}
+                themeMode={themeMode}
+                setThemeMode={setThemeMode}
+                notify={notify}
+                onLogout={() => setLoggedIn(false)}
+              />
+            ) : (
+              <div>
+                <div className="mobile-subpage-header">
+                  <button
+                    type="button"
+                    className="mobile-back-btn"
+                    onClick={() => setScreen('Dashboard')}
+                    title="Back to Home"
+                  >
+                    <Icon name="arrowLeft" size={16}/>
+                  </button>
+                  <h3 className="mobile-subpage-title">{screen}</h3>
+                </div>
+                <div className="mobile-subpage-content">
+                  {page}
+                </div>
+              </div>
+            )}
+
+            {/* Floating Mobile Bottom Navigation Dock */}
+            <nav className="mobile-bottom-dock">
+              <button
+                type="button"
+                className={`dock-item ${screen === 'Capital & Partners' ? 'active' : ''}`}
+                onClick={() => setScreen('Capital & Partners')}
+              >
+                <Icon name="cards" size={19}/>
+                <span>Cards</span>
+              </button>
+
+              <button
+                type="button"
+                className={`dock-item ${screen === 'Leads' ? 'active' : ''}`}
+                onClick={() => setScreen('Leads')}
+              >
+                <Icon name="activity" size={19}/>
+                <span>Activity</span>
+              </button>
+
+              {/* Elevated Floating Center Home Button */}
+              <button
+                type="button"
+                className="dock-item-center"
+                onClick={() => setScreen('Dashboard')}
+                title="Home Dashboard"
+              >
+                <Icon name="home" size={24}/>
+              </button>
+
+              <button
+                type="button"
+                className={`dock-item ${screen === 'Scheduled EMIs' ? 'active' : ''}`}
+                onClick={() => setScreen('Scheduled EMIs')}
+              >
+                <Icon name="calendar" size={19}/>
+                <span>Payments</span>
+              </button>
+
+              <button
+                type="button"
+                className={`dock-item ${['Loans', 'Expenses', 'Profit & Loss', 'Transactions'].includes(screen) ? 'active' : ''}`}
+                onClick={() => {
+                  if (screen === 'Loans') setScreen('Expenses')
+                  else if (screen === 'Expenses') setScreen('Profit & Loss')
+                  else if (screen === 'Profit & Loss') setScreen('Transactions')
+                  else setScreen('Loans')
+                }}
+              >
+                <Icon name="dots" size={19}/>
+                <span>More</span>
+              </button>
+            </nav>
+          </div>
+
+          {/* Bottom Home Indicator Bar */}
+          <div className="phone-home-indicator"/>
+        </div>
+
+        {modal && (
+          <FormModal
+            type={modal}
+            targetId={modalTargetId}
+            targetEmi={payTargetEmi}
+            availableBalance={masterWallet.available_balance}
+            partners={partners}
+            leads={leads}
+            onClose={() => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null) }}
+            onDone={msg => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null); notify(msg) }}
+          />
+        )}
+
+        {toast && (
+          <div className="toast">
+            <span><Icon name="check"/></span>
+            {toast}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="app-shell theme-violet">
+    <div className={`app-shell ${themeMode}`}>
       <aside className={`sidebar ${sidebar ? 'open' : ''}`}>
         <div className="brand">
           <div className="brand-mark">GE</div>
@@ -2563,6 +3114,16 @@ export default function App() {
             <kbd>⌘ K</kbd>
           </div>
           <div className="top-actions">
+            <button
+              type="button"
+              className="fe-pill"
+              onClick={() => setViewMode('mobile')}
+              style={{ cursor: 'pointer', background: 'var(--green-soft)', color: 'var(--green-dark)', fontWeight: 700 }}
+              title="Switch to Mobile Phone Simulator"
+            >
+              📱 Mobile View
+            </button>
+
             <span
               className="topbar-status-badge"
               style={{
