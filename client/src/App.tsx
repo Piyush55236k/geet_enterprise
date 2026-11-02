@@ -15,7 +15,7 @@ type IconName =
   | 'expense' | 'chart' | 'transaction' | 'bell' | 'search' | 'plus'
   | 'arrowUp' | 'arrowDown' | 'chevron' | 'download' | 'filter' | 'logout'
   | 'menu' | 'close' | 'check' | 'upload' | 'arrowRight' | 'arrowLeft'
-  | 'home' | 'cards' | 'activity' | 'dots' | 'palette' | 'transfer' | 'bills' | 'exchange' | 'eye' | 'eyeOff'
+  | 'home' | 'cards' | 'activity' | 'dots' | 'palette' | 'transfer' | 'request' | 'bills' | 'exchange' | 'eye' | 'eyeOff' | 'smartphone'
 
 const iconPaths: Record<IconName, ReactNode> = {
   grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>,
@@ -46,12 +46,14 @@ const iconPaths: Record<IconName, ReactNode> = {
   cards: <><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></>,
   activity: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>,
   dots: <><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></>,
-  palette: <path d="M12 2a10 10 0 0 0-10 10c0 5.5 4.5 10 10 10a2 2 0 0 0 2-2c0-.5-.2-1-.5-1.4-.3-.4-.5-.9-.5-1.6 0-1.1.9-2 2-2h2.4c3.3 0 6-2.7 6-6 0-5.5-5.1-7-11.4-7Z"/>,
-  transfer: <><path d="M17 3v14m0 0 4-4m-4 4-4-4"/><path d="M7 21V7m0 0-4 4m4-4 4 4"/></>,
-  bills: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></>,
-  exchange: <path d="M4 17h16m-4-4 4 4-4 4M20 7H4m4-4-4 4 4 4"/>,
+  palette: <><path d="M12 2C6.49 2 2 6.49 2 12c0 5.51 4.49 10 10 10a2.5 2.5 0 0 0 2.5-2.5c0-.64-.24-1.23-.64-1.68-.42-.46-.68-1.07-.68-1.74 0-1.38 1.12-2.5 2.5-2.5h1.9c3.04 0 5.42-2.46 5.42-5.5C22.5 6.07 17.75 2 12 2Z"/><circle cx="8" cy="10" r="1.5" fill="currentColor"/><circle cx="12" cy="7" r="1.5" fill="currentColor"/><circle cx="16" cy="10" r="1.5" fill="currentColor"/></>,
+  transfer: <path d="M7 17L17 7M17 7H7M17 7V17"/>,
+  request: <path d="M17 7L7 17M7 17H17M7 17V7"/>,
+  bills: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>,
+  exchange: <><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></>,
   eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
   eyeOff: <><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/></>,
+  smartphone: <><rect x="5" y="2" width="14" height="20" rx="3" ry="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></>,
 }
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
@@ -2354,20 +2356,23 @@ function MobileHome({
         )}
       </div>
 
-      {/* 2. Card Carousel matching reference image */}
+      {/* 2. Centralized Capital Card matching reference styling */}
       <div className="mobile-card-carousel">
-        {/* Main Bank Card */}
+        {/* Main Master Capital Card */}
         <div className="mobile-bank-card">
           <div className="mobile-card-decor"/>
           <div className="mobile-card-head">
-            <span className="mobile-card-title">Savings Account · Master Capital</span>
+            <div>
+              <span className="mobile-card-eyebrow">CENTRALIZED MASTER WALLET</span>
+              <h4 className="mobile-card-title">Geet Capital Pool</h4>
+            </div>
             <button
               type="button"
               className="mobile-card-options-btn"
-              title="Card options"
+              title="Add Capital Investment"
               onClick={openAddCapital}
             >
-              <Icon name="dots" size={16}/>
+              <Icon name="plus" size={16}/>
             </button>
           </div>
 
@@ -2383,27 +2388,33 @@ function MobileHome({
 
             {balanceRevealed ? (
               <div style={{ marginTop: '10px' }}>
-                <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'Manrope', color: '#ffffff' }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'Manrope', color: '#ffffff' }}>
                   {money(masterWallet.available_balance)}
                 </div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.75)', marginTop: '2px' }}>
-                  Total Pool: {money(masterWallet.total_capital)} · Deployed: {money(masterWallet.allocated_capital)}
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
+                  Liquid available for immediate loan disbursals
                 </div>
               </div>
             ) : (
-              <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '3px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>
-                ••••••••••
+              <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '4px', color: 'rgba(255,255,255,0.7)', marginTop: '8px' }}>
+                ₹ ••••••••
               </div>
             )}
           </div>
 
           <div className="mobile-card-foot">
-            <span className="mobile-card-num">1234  5678  1234  5661</span>
-            <span className="mobile-card-expiry">08 / 25</span>
+            <div>
+              <span style={{ fontSize: '9px', opacity: 0.75, display: 'block' }}>TOTAL CAPITAL</span>
+              <strong style={{ fontSize: '12px', letterSpacing: '0.5px' }}>{money(masterWallet.total_capital)}</strong>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: '9px', opacity: 0.75, display: 'block' }}>DEPLOYED IN LOANS</span>
+              <strong style={{ fontSize: '12px', letterSpacing: '0.5px' }}>{money(masterWallet.allocated_capital)}</strong>
+            </div>
           </div>
         </div>
 
-        {/* Secondary Card Peek */}
+        {/* Secondary Card: Active Loans Portfolio */}
         <div
           className="mobile-bank-card secondary-card"
           onClick={() => navigate('Loans')}
@@ -2411,66 +2422,69 @@ function MobileHome({
         >
           <div className="mobile-card-decor"/>
           <div className="mobile-card-head">
-            <span className="mobile-card-title">Active Loans Portfolio</span>
-            <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+            <div>
+              <span className="mobile-card-eyebrow">PORTFOLIO</span>
+              <h4 className="mobile-card-title">Active Loans</h4>
+            </div>
+            <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.18)', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
               {loans.length} Loans
             </span>
           </div>
           <div className="mobile-card-mid">
-            <div style={{ fontSize: '20px', fontWeight: 800, fontFamily: 'Manrope' }}>
+            <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'Manrope' }}>
               {money(masterWallet.allocated_capital)}
             </div>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
-              130% Multiplier Sanction Engine
+              130% Multiplier · 15D EMI Schedule
             </div>
           </div>
           <div className="mobile-card-foot">
-            <span className="mobile-card-num">GEET •••• LOAN</span>
-            <span className="mobile-card-expiry">FY 24/25</span>
+            <span style={{ fontSize: '11px', opacity: 0.85 }}>GEET ENTERPRISE</span>
+            <span style={{ fontSize: '11px', opacity: 0.85, fontWeight: 700 }}>Tap to view loans →</span>
           </div>
         </div>
       </div>
 
-      {/* 3. 4 Circular Quick Action Buttons from Screenshot */}
+      {/* 3. 4 Circular Quick Action Buttons */}
       <div className="mobile-quick-actions">
         <button type="button" className="quick-action-item" onClick={openAddLead}>
           <div className="quick-action-circle">
             <div className="quick-icon-ring green">
-              <Icon name="transfer" size={16}/>
+              <Icon name="transfer" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Transfer</span>
+          <span className="quick-action-label">+ Lead</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={openConvertLead}>
           <div className="quick-action-circle">
             <div className="quick-icon-ring red">
-              <Icon name="arrowDown" size={16}/>
+              <Icon name="request" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Request</span>
+          <span className="quick-action-label">To Loan</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')}>
           <div className="quick-action-circle">
             <div className="quick-icon-ring blue">
-              <Icon name="exchange" size={16}/>
+              <Icon name="exchange" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Exchange</span>
+          <span className="quick-action-label">Pay EMI</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={openAddExpense}>
           <div className="quick-action-circle">
             <div className="quick-icon-ring amber">
-              <Icon name="bills" size={16}/>
+              <Icon name="bills" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Bills</span>
+          <span className="quick-action-label">+ Expense</span>
         </button>
       </div>
 
-      {/* 4. Recent Activity Section from Screenshot */}
+      {/* 4. Recent Activity Section from Real Central Ledger */}
       <div className="mobile-activity-section">
         <div className="mobile-activity-head">
           <span className="mobile-activity-title">Recent Activity</span>
@@ -2483,95 +2497,40 @@ function MobileHome({
           </button>
         </div>
 
-        {/* Activity item 1: Bill Payment / Expense */}
-        <div
-          className="mobile-activity-item"
-          onClick={openAddExpense}
-        >
-          <div className="mobile-act-icon red">
-            G
-          </div>
-          <div className="mobile-act-details">
-            <div className="mobile-act-name">Google Ads Marketing</div>
-            <div className="mobile-act-date">14th March 2026 · Operating Expense</div>
-          </div>
-          <div className="mobile-act-amount-col">
-            <div className="mobile-act-amt debit">-$150.55</div>
-            <div className="mobile-act-badge">Bill Payment</div>
-          </div>
-        </div>
+        {transactions && transactions.length > 0 ? (
+          transactions.slice(0, 5).map(tx => {
+            const isCredit = tx[4]?.toLowerCase() === 'credit'
+            const isDisbursal = tx[2]?.toLowerCase().includes('disburs')
+            const isEmi = tx[2]?.toLowerCase().includes('emi')
+            const tone = isCredit ? 'green' : isDisbursal ? 'amber' : 'red'
 
-        {/* Activity item 2: EMI Collection */}
-        <div
-          className="mobile-activity-item"
-          onClick={() => navigate('Scheduled EMIs')}
-        >
-          <div className="mobile-act-icon green">
-            <Icon name="arrowUp" size={16}/>
+            return (
+              <div
+                className="mobile-activity-item"
+                key={tx[0]}
+                onClick={() => navigate('Transactions')}
+              >
+                <div className={`mobile-act-icon ${tone}`}>
+                  {isCredit ? <Icon name="arrowUp" size={16}/> : isDisbursal ? <Icon name="loans" size={16}/> : <Icon name="arrowDown" size={16}/>}
+                </div>
+                <div className="mobile-act-details">
+                  <div className="mobile-act-name">{tx[3] || tx[2]}</div>
+                  <div className="mobile-act-date">{tx[1]} · {tx[2]}</div>
+                </div>
+                <div className="mobile-act-amount-col">
+                  <div className={`mobile-act-amt ${isCredit ? 'credit' : 'debit'}`}>
+                    {isCredit ? '+' : '-'}{tx[5]}
+                  </div>
+                  <div className="mobile-act-badge">{tx[4]}</div>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--muted)', fontSize: '12px' }}>
+            No recent activity recorded yet
           </div>
-          <div className="mobile-act-details">
-            <div className="mobile-act-name">Shree Balaji Traders</div>
-            <div className="mobile-act-date">2 Nov 2026 · EMI Received</div>
-          </div>
-          <div className="mobile-act-amount-col">
-            <div className="mobile-act-amt credit">+₹51,038</div>
-            <div className="mobile-act-badge">EMI Credited</div>
-          </div>
-        </div>
-
-        {/* Activity item 3: Loan Sanction */}
-        <div
-          className="mobile-activity-item"
-          onClick={() => navigate('Loans')}
-        >
-          <div className="mobile-act-icon amber">
-            <Icon name="loans" size={16}/>
-          </div>
-          <div className="mobile-act-details">
-            <div className="mobile-act-name">Bansal Steel Works</div>
-            <div className="mobile-act-date">2 Nov 2026 · Loan Disbursement</div>
-          </div>
-          <div className="mobile-act-amount-col">
-            <div className="mobile-act-amt debit">-₹18,00,000</div>
-            <div className="mobile-act-badge">Disbursed</div>
-          </div>
-        </div>
-
-        {/* Activity item 4: Investor Capital Added */}
-        <div
-          className="mobile-activity-item"
-          onClick={() => navigate('Capital & Partners')}
-        >
-          <div className="mobile-act-icon blue">
-            <Icon name="wallet" size={16}/>
-          </div>
-          <div className="mobile-act-details">
-            <div className="mobile-act-name">Priya Mehta Capital</div>
-            <div className="mobile-act-date">1 Nov 2026 · Investor Equity</div>
-          </div>
-          <div className="mobile-act-amount-col">
-            <div className="mobile-act-amt credit">+₹15,00,000</div>
-            <div className="mobile-act-badge">Pool Equity</div>
-          </div>
-        </div>
-
-        {/* Activity item 5: Lead Qualified */}
-        <div
-          className="mobile-activity-item"
-          onClick={() => navigate('Leads')}
-        >
-          <div className="mobile-act-icon green">
-            <Icon name="leads" size={16}/>
-          </div>
-          <div className="mobile-act-details">
-            <div className="mobile-act-name">Aarav Industries</div>
-            <div className="mobile-act-date">28 Oct 2026 · Lead Qualified</div>
-          </div>
-          <div className="mobile-act-amount-col">
-            <div className="mobile-act-amt credit">₹12,00,000</div>
-            <div className="mobile-act-badge">Ready to Convert</div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -2644,7 +2603,9 @@ function Login({ onLogin }: { onLogin: () => void }) {
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(true)
-  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('mobile')
+  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>(
+    typeof window !== 'undefined' && window.innerWidth <= 768 ? 'mobile' : 'desktop'
+  )
   const [balanceRevealed, setBalanceRevealed] = useState(false)
   const [themeMode, setThemeMode] = useState<'theme-violet' | 'theme-amber' | 'theme-cyan'>('theme-violet')
   const [screen, setScreen] = useState<Screen>('Dashboard')
@@ -2908,7 +2869,7 @@ export default function App() {
         {/* Desktop control bar above phone */}
         <div className="simulator-toolbar">
           <strong>
-            <Icon name="cards" size={15}/> Geet Enterprise Mobile View
+            <Icon name="smartphone" size={15}/> Geet Enterprise Mobile View
           </strong>
           <div className="simulator-mode-switch">
             <button
@@ -2916,14 +2877,14 @@ export default function App() {
               className={viewMode === 'mobile' ? 'active' : ''}
               onClick={() => setViewMode('mobile')}
             >
-              📱 Mobile
+              <Icon name="smartphone" size={12}/> Mobile
             </button>
             <button
               type="button"
               className={viewMode === 'desktop' ? 'active' : ''}
               onClick={() => setViewMode('desktop')}
             >
-              🖥 Desktop
+              <Icon name="grid" size={12}/> Desktop
             </button>
           </div>
         </div>
@@ -2997,7 +2958,7 @@ export default function App() {
                 onClick={() => setScreen('Capital & Partners')}
               >
                 <Icon name="cards" size={19}/>
-                <span>Cards</span>
+                <span>Capital</span>
               </button>
 
               <button
@@ -3006,7 +2967,7 @@ export default function App() {
                 onClick={() => setScreen('Leads')}
               >
                 <Icon name="activity" size={19}/>
-                <span>Activity</span>
+                <span>Leads</span>
               </button>
 
               {/* Elevated Floating Center Home Button */}
@@ -3025,7 +2986,7 @@ export default function App() {
                 onClick={() => setScreen('Scheduled EMIs')}
               >
                 <Icon name="calendar" size={19}/>
-                <span>Payments</span>
+                <span>EMIs</span>
               </button>
 
               <button
@@ -3116,12 +3077,12 @@ export default function App() {
           <div className="top-actions">
             <button
               type="button"
-              className="fe-pill"
+              className="mobile-device-toggle-btn"
               onClick={() => setViewMode('mobile')}
-              style={{ cursor: 'pointer', background: 'var(--green-soft)', color: 'var(--green-dark)', fontWeight: 700 }}
-              title="Switch to Mobile Phone Simulator"
+              title="Open Mobile Screen View"
             >
-              📱 Mobile View
+              <Icon name="smartphone" size={16}/>
+              <span>Mobile View</span>
             </button>
 
             <span
