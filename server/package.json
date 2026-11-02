@@ -1,25 +1,29 @@
 {
-  "name": "geet-enterprise",
+  "name": "geet-enterprise-server",
   "version": "1.0.0",
-  "description": "Geet Enterprise - Mobile-First Finance, Loan & Expense ERP",
+  "description": "Geet Enterprise - Full-Stack Finance, Capital & Lending ERP Backend",
   "main": "server.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "nodemon server.js"
   },
   "keywords": [
+    "geet-enterprise",
     "finance",
     "erp",
-    "loans",
-    "emi",
-    "expenses"
+    "lending",
+    "wallet",
+    "loans"
   ],
   "author": "Geet Enterprise",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.3.0",
-    "multer": "^2.5.0"
+    "cors": "^2.8.5",
+    "express": "^5.0.1",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   }
 }

@@ -16,7 +16,7 @@ build/
 .vite/
 *.tsbuildinfo
 
-# SQLite Database binaries (seeded automatically from seed_data.json)
+# SQLite Database binaries (seeded automatically)
 *.sqlite
 *.sqlite-journal
 *.sqlite3
@@ -42,4 +42,3 @@ Thumbs.db
 /.figma/design-context/
 /.plugins/
 /.opencode-skills/
-

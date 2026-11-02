@@ -1,5 +1,5 @@
 {
-  "description": "Calculate business loan EMIs, interest, fees, and repayment schedules, then save and manage funding estimates for faster, clearer financing decisions.",
+  "description": "Manage lending operations with INR wallets, loans, EMI tracking, expenses, and profit reports for administrators and finance teams.",
   "robots": {
     "index": false
   },
