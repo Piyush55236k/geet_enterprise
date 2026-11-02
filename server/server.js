@@ -229,19 +229,14 @@ app.get('/api/loans', (req, res) => {
 
 app.post('/api/loans', (req, res) => {
   try {
-    const { business, customer, principal, roi, tenure, emi, status, leadId } = req.body;
+    const { business, customer } = req.body;
     if (!business && !customer) {
       return res.status(400).json({ success: false, error: 'Customer / business name is required.' });
     }
     const created = db.createLoan({
+      ...req.body,
       business: business || customer,
-      customer: customer || business,
-      principal: Number(principal) || 500000,
-      roi: Number(roi) || 18,
-      tenure: Number(tenure) || 12,
-      emi: Number(emi) || 0,
-      status: status || 'Active',
-      leadId
+      customer: customer || business
     });
     res.status(201).json({ success: true, data: created });
   } catch (error) {

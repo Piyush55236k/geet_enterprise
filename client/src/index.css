@@ -2346,4 +2346,306 @@ main { padding:32px 34px 56px; max-width:1600px; margin:0 auto; }
   gap: 4px;
 }
 
+/* ============================================================= */
+/* PACKED LOAN EMI ACCORDION / BOX SYSTEM                        */
+/* ============================================================= */
+.loan-emi-box {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  margin-bottom: 14px;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.loan-emi-box.is-expanded {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.loan-emi-box-head {
+  padding: 14px 16px 12px;
+  cursor: pointer;
+  background: #ffffff;
+  transition: background 0.12s ease;
+}
+
+.loan-emi-box-head:active {
+  background: #f8fafc;
+}
+
+.loan-emi-head-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.loan-emi-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #3b82f6;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid #dbeafe;
+}
+
+.loan-emi-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.loan-emi-customer {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+
+.loan-emi-loan-id {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.loan-emi-loan-id strong {
+  color: #334155;
+  font-family: monospace;
+}
+
+.loan-emi-badge {
+  flex-shrink: 0;
+}
+
+.loan-emi-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: #f8fafc;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+  margin-bottom: 10px;
+}
+
+.loan-emi-stat-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.loan-emi-stat-item .stat-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loan-emi-stat-item .stat-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: 'Manrope', sans-serif;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loan-emi-stat-item .stat-val.blue {
+  color: #2563eb;
+}
+
+.loan-emi-stat-item .stat-val.green {
+  color: #16a34a;
+}
+
+.loan-emi-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.loan-emi-progress-track {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.loan-emi-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.loan-emi-progress-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.loan-emi-toggle-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.loan-emi-toggle-banner:hover {
+  background: #dbeafe;
+}
+
+.loan-emi-chevron {
+  display: grid;
+  place-items: center;
+}
+
+/* Expanded list of EMIs */
+.loan-emi-items-list {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 12px 14px;
+}
+
+.loan-emi-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+
+.loan-emi-row {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.12s;
+}
+
+.loan-emi-row.paid {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.loan-emi-row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.emi-number-tag {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.emi-number-tag.paid {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.emi-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.emi-date-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.emi-amount-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: 'Manrope', sans-serif;
+  margin-top: 1px;
+}
+
+.emi-balance-small {
+  font-size: 9.5px;
+  color: #94a3b8;
+}
+
+.loan-emi-row-right {
+  flex-shrink: 0;
+}
+
+.emi-paid-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.emi-paid-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+.emi-paid-sub {
+  font-size: 9px;
+  color: #64748b;
+}
+
+.emi-utr-tag {
+  font-size: 10px;
+  font-family: monospace;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+
 

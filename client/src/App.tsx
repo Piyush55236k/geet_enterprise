@@ -851,6 +851,8 @@ function FundingEngine({
   const [netInHandTarget, setNetInHandTarget] = useState('800000')
   const [advanceCustom, setAdvanceCustom] = useState('150000')
   const [advanceDays, setAdvanceDays] = useState('15')
+  const [disburseUtr, setDisburseUtr] = useState('')
+  const [disburseMethod, setDisburseMethod] = useState('NEFT / RTGS')
   const [scheduleSearch, setScheduleSearch] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -1016,6 +1018,10 @@ Total Repayment Balance: ${money(remainingRepayment)}`
       alert('Please enter borrower business name')
       return
     }
+    if (selectedLeadId && !disburseUtr.trim()) {
+      alert('Please enter the Bank UTR / Payment reference number to confirm disbursement and mark this lead as Converted.')
+      return
+    }
     setSubmitting(true)
     try {
       const res = await fetch('/api/loans', {
@@ -1036,18 +1042,20 @@ Total Repayment Balance: ${money(remainingRepayment)}`
           payableEmis,
           emi: adjustedPerEmi,
           startDate,
-          emiSchedule: schedule
+          emiSchedule: schedule,
+          utr: disburseUtr.trim(),
+          paymentMethod: disburseMethod
         })
       })
       const data = await res.json()
       if (data.success) {
         onSuccess(
           selectedLeadId
-            ? `Lead "${calcBusiness}" successfully converted to Loan proposal with ${payableEmis} scheduled EMIs!`
-            : `Loan proposal created for "${calcBusiness}" with ${payableEmis} scheduled EMIs!`
+            ? `Lead "${calcBusiness}" successfully converted to Active Loan (UTR: ${disburseUtr.trim()}) with ${payableEmis} scheduled EMIs!`
+            : `Loan created for "${calcBusiness}" with ${payableEmis} scheduled EMIs!`
         )
       } else {
-        alert(data.error || 'Failed to sanction loan')
+        alert(data.error || 'Failed to create loan')
       }
     } catch {
       alert('Failed to connect to backend server')
@@ -1309,6 +1317,54 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                 />
               </div>
             )}
+          </div>
+
+          {/* Bank UTR & Disbursement Confirmation Section */}
+          <div style={{ marginTop: '14px', background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px' }}>
+            <div className="fe-label" style={{ marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 800, color: '#166534', fontSize: '11px' }}>
+                Bank UTR / Transaction Reference {selectedLeadId ? '*' : '(Optional)'}
+              </span>
+              <span className="fe-pill green" style={{ fontWeight: 700, fontSize: '9px' }}>
+                {selectedLeadId ? 'Required to Convert Lead' : 'Disbursement Reference'}
+              </span>
+            </div>
+            <input
+              type="text"
+              value={disburseUtr}
+              onChange={e => setDisburseUtr(e.target.value)}
+              placeholder="e.g. HDFC009234812 or UTR12345678"
+              required={Boolean(selectedLeadId)}
+              style={{
+                fontFamily: 'monospace',
+                fontWeight: 700,
+                fontSize: '13px',
+                letterSpacing: '0.5px',
+                background: '#ffffff',
+                border: '1.5px solid #22c55e',
+                borderRadius: '8px',
+                padding: '8px 10px',
+                width: '100%',
+                boxSizing: 'border-box'
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+              <span style={{ fontSize: '9.5px', color: '#15803d' }}>
+                {selectedLeadId
+                  ? 'Entering UTR marks lead as Converted, activates loan & debits funds.'
+                  : 'Enter bank reference to record instant fund disbursement.'}
+              </span>
+              <select
+                value={disburseMethod}
+                onChange={e => setDisburseMethod(e.target.value)}
+                style={{ height: '26px', fontSize: '10px', padding: '0 6px', borderRadius: '4px', border: '1px solid #86efac' }}
+              >
+                <option>NEFT / RTGS</option>
+                <option>IMPS</option>
+                <option>UPI</option>
+                <option>Cheque</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1751,6 +1807,14 @@ function ScheduledEmis({
 }) {
   const [filterTab, setFilterTab] = useState<'All' | 'Paid' | 'Upcoming' | 'Overdue'>('All')
   const [query, setQuery] = useState('')
+  const [expandedLoans, setExpandedLoans] = useState<Record<string, boolean>>({})
+
+  const toggleLoan = (loanId: string) => {
+    setExpandedLoans(prev => ({
+      ...prev,
+      [loanId]: !prev[loanId]
+    }))
+  }
 
   const counts = useMemo(() => ({
     all: emis.length,
@@ -1759,21 +1823,82 @@ function ScheduledEmis({
     overdue: emis.filter(e => e.status === 'Overdue').length,
   }), [emis])
 
-  const filtered = useMemo(() => {
-    return emis.filter(e => {
-      const isPaid = e.status === 'Paid'
-      const isUpcoming = e.status === 'Upcoming' || e.status === 'Scheduled'
-      const isOverdue = e.status === 'Overdue'
+  // Group all EMIs by Loan Account
+  const loanGroups = useMemo(() => {
+    const map = new Map<string, {
+      loanId: string
+      customer: string
+      items: EmiItem[]
+      totalEmis: number
+      paidCount: number
+      upcomingCount: number
+      overdueCount: number
+      totalAmount: number
+      paidAmount: number
+      remainingAmount: number
+      regularEmi: number
+      nextDueEmi?: EmiItem
+      isFullyPaid: boolean
+    }>()
 
-      let matchesTab = true
-      if (filterTab === 'Paid') matchesTab = isPaid
-      else if (filterTab === 'Upcoming') matchesTab = isUpcoming
-      else if (filterTab === 'Overdue') matchesTab = isOverdue
+    for (const emi of emis) {
+      const key = emi.loan_id || 'OTHER'
+      if (!map.has(key)) {
+        map.set(key, {
+          loanId: key,
+          customer: emi.customer || 'Unknown Borrower',
+          items: [],
+          totalEmis: 0,
+          paidCount: 0,
+          upcomingCount: 0,
+          overdueCount: 0,
+          totalAmount: 0,
+          paidAmount: 0,
+          remainingAmount: 0,
+          regularEmi: Number(emi.amount) || 0,
+          nextDueEmi: undefined,
+          isFullyPaid: false
+        })
+      }
+      map.get(key)!.items.push(emi)
+    }
 
-      const matchesQuery = !query || `${e.id} ${e.customer} ${e.loan_id} ${e.due_date} ${e.utr || ''}`.toLowerCase().includes(query.toLowerCase())
-      return matchesTab && matchesQuery
+    const groups = Array.from(map.values())
+    groups.forEach(g => {
+      g.items.sort((a, b) => (Number(a.installment_num) || 0) - (Number(b.installment_num) || 0))
+      g.totalEmis = g.items.length
+      g.paidCount = g.items.filter(e => e.status === 'Paid').length
+      g.upcomingCount = g.items.filter(e => e.status === 'Upcoming' || e.status === 'Scheduled').length
+      g.overdueCount = g.items.filter(e => e.status === 'Overdue').length
+      g.totalAmount = g.items.reduce((acc, e) => acc + (Number(e.amount) || 0), 0)
+      g.paidAmount = g.items.filter(e => e.status === 'Paid').reduce((acc, e) => acc + (Number(e.amount) || 0), 0)
+      g.remainingAmount = Math.max(0, g.totalAmount - g.paidAmount)
+      g.regularEmi = g.items[0]?.amount || 0
+      g.nextDueEmi = g.items.find(e => e.status !== 'Paid')
+      g.isFullyPaid = g.paidCount > 0 && g.paidCount === g.totalEmis
     })
-  }, [emis, filterTab, query])
+
+    return groups
+  }, [emis])
+
+  // Filter groups according to tabs and search query
+  const filteredGroups = useMemo(() => {
+    return loanGroups.filter(g => {
+      if (filterTab === 'Paid' && g.paidCount === 0) return false
+      if (filterTab === 'Upcoming' && g.upcomingCount === 0) return false
+      if (filterTab === 'Overdue' && g.overdueCount === 0) return false
+
+      if (query.trim()) {
+        const q = query.toLowerCase()
+        const matchesLoan = g.customer.toLowerCase().includes(q) || g.loanId.toLowerCase().includes(q)
+        const matchesEmi = g.items.some(e =>
+          `${e.id} ${e.due_date} ${e.utr || ''}`.toLowerCase().includes(q)
+        )
+        if (!matchesLoan && !matchesEmi) return false
+      }
+      return true
+    })
+  }, [loanGroups, filterTab, query])
 
   const totalDue = useMemo(() => emis.reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
   const totalPaid = useMemo(() => emis.filter(e => e.status === 'Paid').reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
@@ -1814,75 +1939,153 @@ function ScheduledEmis({
       <MSearchBar
         value={query}
         onChange={setQuery}
-        placeholder="Search customer, loan ID or UTR..."
+        placeholder="Search borrower, loan ID or UTR..."
       />
 
       <div className="m-section-header">
         <h4 className="m-section-title">
-          <Icon name="calendar" size={16}/> EMI Repayment Schedule
-          <span className="m-count-badge">{filtered.length}</span>
+          <Icon name="calendar" size={16}/> Loan Accounts ({filteredGroups.length})
+          <span className="m-count-badge">{counts.all} Total EMIs</span>
         </h4>
       </div>
 
-      {filtered.length === 0 ? (
+      {filteredGroups.length === 0 ? (
         <div className="m-empty-card">
-          No installments found matching this filter.
+          No loan accounts found matching this filter.
         </div>
       ) : (
-        filtered.map(item => {
-          const isPaid = item.status === 'Paid'
+        filteredGroups.map(group => {
+          const isExpanded = Boolean(expandedLoans[group.loanId] || (query.trim().length > 0))
+          const pct = Math.round((group.paidCount / (group.totalEmis || 1)) * 100)
+
           return (
-            <div className="m-card" key={item.id}>
-              <div className="m-card-head">
-                <div>
-                  <div className="m-card-title">Instalment #{item.installment_num || 1}</div>
-                  <div className="m-card-subtitle">{item.customer} · Loan: {item.loan_id}</div>
-                </div>
-                <Badge status={item.status}/>
-              </div>
-              <div className="m-card-grid">
-                <div className="m-grid-cell">
-                  <span className="m-grid-label">Due Date</span>
-                  <span className="m-grid-value" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Icon name="calendar" size={13}/> {item.due_date}
-                  </span>
-                </div>
-                <div className="m-grid-cell">
-                  <span className="m-grid-label">EMI Amount</span>
-                  <span className="m-grid-value highlight" style={{ color: '#2563eb' }}>{money(item.amount)}</span>
-                </div>
-                <div className="m-grid-cell">
-                  <span className="m-grid-label">Cumulative Paid</span>
-                  <span className="m-grid-value">{money(item.cumulative_paid || item.amount)}</span>
-                </div>
-                <div className="m-grid-cell">
-                  <span className="m-grid-label">Remaining Balance</span>
-                  <span className="m-grid-value">{money(item.balance || 0)}</span>
-                </div>
-              </div>
-              <div className="m-card-actions">
-                {isPaid ? (
-                  <div style={{ width: '100%', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '8px 12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 800 }}>✓ PAID</span>
-                      <span style={{ fontSize: '10px', color: '#64748b' }}>{item.paid_date}</span>
-                    </div>
-                    {item.utr && (
-                      <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#15803d', fontWeight: 700, marginTop: '2px' }}>
-                        Bank UTR: {item.utr}
-                      </div>
+            <div className={`loan-emi-box ${isExpanded ? 'is-expanded' : ''}`} key={group.loanId}>
+              {/* Box Top Header: Borrower + Loan ID + Badge + Toggle */}
+              <div
+                className="loan-emi-box-head"
+                onClick={() => toggleLoan(group.loanId)}
+                title="Click to view all EMIs of this loan"
+              >
+                <div className="loan-emi-head-top">
+                  <div className="loan-emi-avatar">
+                    <Icon name="loans" size={18}/>
+                  </div>
+                  <div className="loan-emi-info">
+                    <div className="loan-emi-customer">{group.customer}</div>
+                    <div className="loan-emi-loan-id">Loan Account: <strong>{group.loanId}</strong></div>
+                  </div>
+                  <div className="loan-emi-badge">
+                    {group.isFullyPaid ? (
+                      <span className="fe-pill green" style={{ fontWeight: 800 }}>✓ All Paid</span>
+                    ) : group.overdueCount > 0 ? (
+                      <span className="fe-pill" style={{ background: '#fef2f2', color: '#dc2626', fontWeight: 800 }}>
+                        {group.overdueCount} Overdue
+                      </span>
+                    ) : (
+                      <span className="fe-pill blue" style={{ fontWeight: 800 }}>
+                        {group.paidCount}/{group.totalEmis} Paid
+                      </span>
                     )}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="m-touch-btn pay"
-                    onClick={() => onOpenPay(item)}
-                  >
-                    <Icon name="payments" size={14}/> Submit Bank UTR (Mark Paid) →
-                  </button>
-                )}
+                </div>
+
+                {/* 4 Summary Stats inside the single packed box */}
+                <div className="loan-emi-stats-grid">
+                  <div className="loan-emi-stat-item">
+                    <span className="stat-label">EMI Amount</span>
+                    <strong className="stat-val blue">{money(group.regularEmi)}</strong>
+                  </div>
+                  <div className="loan-emi-stat-item">
+                    <span className="stat-label">Collected ({group.paidCount})</span>
+                    <strong className="stat-val green">{money(group.paidAmount)}</strong>
+                  </div>
+                  <div className="loan-emi-stat-item">
+                    <span className="stat-label">Remaining Balance</span>
+                    <strong className="stat-val">{money(group.remainingAmount)}</strong>
+                  </div>
+                  <div className="loan-emi-stat-item">
+                    <span className="stat-label">Next Due Date</span>
+                    <strong className="stat-val" style={{ fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {group.nextDueEmi ? group.nextDueEmi.due_date : 'All Cleared'}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Visual Progress Bar */}
+                <div className="loan-emi-progress-wrap">
+                  <div className="loan-emi-progress-track">
+                    <div className="loan-emi-progress-bar" style={{ width: `${pct}%` }}/>
+                  </div>
+                  <span className="loan-emi-progress-text">{pct}% collected</span>
+                </div>
+
+                {/* Banner Button: View All EMIs */}
+                <div className="loan-emi-toggle-banner">
+                  <span>
+                    {isExpanded
+                      ? `Hide EMIs of ${group.customer} ▴`
+                      : `View All ${group.totalEmis} EMIs (Click to Mark Paid) ▾`}
+                  </span>
+                  <div className="loan-emi-chevron">
+                    <Icon name={isExpanded ? 'chevronUp' : 'chevronDown'} size={15}/>
+                  </div>
+                </div>
               </div>
+
+              {/* Expanded List: Packed all EMIs of this single loan */}
+              {isExpanded && (
+                <div className="loan-emi-items-list">
+                  <div className="loan-emi-items-header">
+                    <span>SCHEDULED INSTALLMENTS FOR {group.loanId}</span>
+                    <span>{group.paidCount} of {group.totalEmis} Paid</span>
+                  </div>
+
+                  {group.items.map(item => {
+                    const isPaid = item.status === 'Paid'
+                    return (
+                      <div className={`loan-emi-row ${isPaid ? 'paid' : ''}`} key={item.id}>
+                        <div className="loan-emi-row-left">
+                          <div className={`emi-number-tag ${isPaid ? 'paid' : ''}`}>
+                            #{item.installment_num || 1}
+                          </div>
+                          <div className="emi-details">
+                            <div className="emi-date-row">
+                              <Icon name="calendar" size={12}/>
+                              <span>Due: {item.due_date}</span>
+                            </div>
+                            <div className="emi-amount-val">{money(item.amount)}</div>
+                            {item.balance !== undefined && Number(item.balance) > 0 && (
+                              <div className="emi-balance-small">Balance remaining: {money(item.balance)}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="loan-emi-row-right">
+                          {isPaid ? (
+                            <div className="emi-paid-block">
+                              <span className="emi-paid-label">✓ PAID</span>
+                              {item.paid_date && <span className="emi-paid-sub">{item.paid_date}</span>}
+                              {item.utr && <span className="emi-utr-tag">UTR: {item.utr}</span>}
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="m-touch-btn pay"
+                              style={{ padding: '8px 12px', fontSize: '11px', width: 'auto' }}
+                              onClick={e => {
+                                e.stopPropagation()
+                                onOpenPay(item)
+                              }}
+                            >
+                              <Icon name="payments" size={13}/> Submit Bank UTR (Mark Paid) →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )
         })

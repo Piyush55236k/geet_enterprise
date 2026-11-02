@@ -138,6 +138,7 @@ function initDb() {
   safeAddColumn('leads', 'team_name TEXT DEFAULT ""');
   safeAddColumn('leads', 'attribution TEXT DEFAULT ""');
   safeAddColumn('leads', 'created_by TEXT DEFAULT "Admin"');
+  safeAddColumn('leads', 'utr TEXT DEFAULT ""');
 
   safeAddColumn('loans', 'total_return REAL DEFAULT 0');
   safeAddColumn('loans', 'net_in_hand REAL DEFAULT 0');
@@ -487,13 +488,20 @@ function createLoan(loan) {
   const payableEmis = Number(loan.payableEmis) || Math.max(1, Math.round(tenureDays / cycleDays));
   const remainingRepayment = totalReturn - advanceDeducted;
   const emiAmount = Number(loan.emi || loan.perEmi) || Math.round(remainingRepayment / payableEmis);
+  const disburseAmount = Number(loan.netInHand) || principal;
+  const hasUtr = Boolean(loan.utr && String(loan.utr).trim());
+  const finalStatus = hasUtr ? 'Active' : (loan.status || 'Disbursal due');
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 
   db.prepare(`
     INSERT INTO loans (
       id, business, customer, principal, roi, tenure, emi, status,
-      total_return, net_in_hand, advance_deducted, processing_fee, tenure_days, frequency_days, payable_emis
+      total_return, net_in_hand, advance_deducted, processing_fee, tenure_days, frequency_days, payable_emis,
+      disbursement_amount, utr, payment_date, payment_method
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'Disbursal due', ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     loan.business || loan.customer,
@@ -502,18 +510,45 @@ function createLoan(loan) {
     multiplier,
     Math.max(1, Math.round(tenureDays / 30)),
     emiAmount,
+    finalStatus,
     totalReturn,
     netInHand,
     advanceDeducted,
     pfAmount,
     tenureDays,
     cycleDays,
-    payableEmis
+    payableEmis,
+    hasUtr ? disburseAmount : 0,
+    hasUtr ? String(loan.utr).trim() : '',
+    hasUtr ? (loan.paymentDate || dateStr) : '',
+    hasUtr ? (loan.paymentMethod || 'NEFT / RTGS') : ''
   );
 
-  // If this loan was created from an existing lead, mark the lead as Converted
+  // If this loan was created from an existing lead, mark the lead as Converted with the UTR
   if (loan.leadId) {
-    db.prepare("UPDATE leads SET status = 'Converted' WHERE id = ?").run(loan.leadId);
+    try {
+      db.prepare("UPDATE leads SET status = 'Converted', utr = ? WHERE id = ?").run(hasUtr ? String(loan.utr).trim() : '', loan.leadId);
+    } catch {
+      db.prepare("UPDATE leads SET status = 'Converted' WHERE id = ?").run(loan.leadId);
+    }
+  }
+
+  // If UTR was entered upon conversion, automatically debit liquid pool and record transaction
+  if (hasUtr) {
+    db.prepare(`
+      UPDATE master_wallet
+      SET available_balance = MAX(0, available_balance - ?),
+          allocated_capital = allocated_capital + ?
+      WHERE id = 1
+    `).run(disburseAmount, disburseAmount);
+
+    const countTxn = db.prepare('SELECT COUNT(*) as count FROM transactions').get().count;
+    const txnId = `TXN-${240313 + countTxn}`;
+
+    db.prepare(`
+      INSERT INTO transactions (id, date, description, party, type, amount, status)
+      VALUES (?, ?, ?, ?, 'Debit', ?, 'Completed')
+    `).run(txnId, dateStr, `Loan Disbursal (UTR: ${String(loan.utr).trim()})`, loan.business || loan.customer, disburseAmount);
   }
 
   // Create all EMIs for this loan in the emis table
