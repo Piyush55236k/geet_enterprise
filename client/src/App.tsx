@@ -1599,7 +1599,7 @@ function Loans({
     return loans.filter(r => r.join(' ').toLowerCase().includes(query.toLowerCase()))
   }, [loans, query])
 
-  const totalPortfolio = loans.reduce((acc, l) => acc + (Number(l[3].replace(/[^0-9]/g, '')) || 0), 0) || 4500000
+  const totalPortfolio = loans.reduce((acc, l) => acc + (Number(l[3].replace(/[^0-9]/g, '')) || 0), 0)
   const activeCount = loans.filter(l => l[7] === 'Active').length
   const disbursalDueCount = loans.filter(l => l[7] === 'Disbursal due').length
 
@@ -1910,7 +1910,7 @@ function ScheduledEmis({
       {/* 2x2 Mobile Stats Grid */}
       <MStatsGrid
         stats={[
-          { label: 'Due This Period', value: money(totalDue || 842600), sub: `${emis.length} installments` },
+          { label: 'Due This Period', value: money(totalDue), sub: `${emis.length} installments` },
           { label: 'Collected to Pool', value: money(totalPaid), sub: `${counts.paid} installments collected`, tone: 'green' },
           { label: 'Upcoming Collections', value: money(totalUpcoming), sub: `${counts.upcoming} pending`, tone: 'blue' },
           { label: 'Overdue Accounts', value: money(totalOverdue), sub: `${counts.overdue} overdue`, tone: 'red' }
@@ -3735,23 +3735,19 @@ export default function App() {
   const [serverOnline, setServerOnline] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
-  // Master State
-  const [masterWallet, setMasterWallet] = useState({ total_capital: 4575000, available_balance: 1435450, allocated_capital: 3139550 })
-  const [partners, setPartners] = useState<Partner[]>([
-    { id: 'u1', name: 'Amit Sharma', role: 'Managing Partner & Investor', theme: 'violet', capitalInvested: 2000000, sharePct: 43.72, grossShare: 207100, expenseShare: 52267, netProfitShare: 154833, roiPct: 7.74, status: 'Profitable' },
-    { id: 'u2', name: 'Priya Mehta', role: 'Senior Partner & Investor', theme: 'amber', capitalInvested: 1500000, sharePct: 32.79, grossShare: 155325, expenseShare: 39200, netProfitShare: 116125, roiPct: 7.74, status: 'Profitable' },
-    { id: 'u3', name: 'Rohan Khanna', role: 'Capital Partner & Investor', theme: 'cyan', capitalInvested: 1075000, sharePct: 23.50, grossShare: 111319, expenseShare: 28094, netProfitShare: 83225, roiPct: 7.74, status: 'Profitable' }
-  ])
+  // Master State (Clean, zero hardcoded seed data)
+  const [masterWallet, setMasterWallet] = useState({ total_capital: 0, available_balance: 0, allocated_capital: 0 })
+  const [partners, setPartners] = useState<Partner[]>([])
   const [financers, setFinancers] = useState<Financer[]>([])
   const [activeRole, setActiveRole] = useState<UserRole>({ type: 'admin', id: 'admin', name: 'Administrator' })
   const [pnl, setPnl] = useState<PnlSummary>({
-    grossRevenue: 473697,
-    interestEarned: 454817,
-    processingFees: 18880,
-    totalExpenses: 119550,
-    netProfit: 354147,
-    profitMargin: 74.8,
-    totalCapitalInvested: 4575000,
+    grossRevenue: 0,
+    interestEarned: 0,
+    processingFees: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    profitMargin: 0,
+    totalCapitalInvested: 0,
     distribution: []
   })
 
