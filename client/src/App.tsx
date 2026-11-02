@@ -107,13 +107,13 @@ function Metric({ label, value, note, trend, tone = 'default' }: { label: string
   </div>
 }
 
-function DataTable({ headers, rows, action }: { headers: string[]; rows: string[][]; action?: (row: string[]) => ReactNode }) {
+function DataTable({ headers, rows, action }: { headers: string[]; rows: string[][]; action?: (row: string[], index: number) => ReactNode }) {
   return <div className="table-wrap"><table><thead><tr>{headers.map(h => <th key={h}>{h}</th>)}{action && <th>Action</th>}</tr></thead>
     <tbody>
       {rows.length === 0 ? (
         <tr><td colSpan={headers.length + (action ? 1 : 0)} style={{ textAlign: 'center', padding: '24px', color: 'var(--muted)' }}>No records found.</td></tr>
       ) : (
-        rows.map((row, i) => <tr key={`${row[0]}-${i}`}>{row.map((cell, j) => <td key={j}>{j === row.length - 1 ? <Badge status={cell}/> : cell}</td>)}{action && <td>{action(row)}</td>}</tr>)
+        rows.map((row, i) => <tr key={`${row[0]}-${i}`}>{row.map((cell, j) => <td key={j}>{j === row.length - 1 ? <Badge status={cell}/> : cell}</td>)}{action && <td>{action(row, i)}</td>}</tr>)
       )}
     </tbody>
   </table></div>
@@ -406,8 +406,767 @@ function Leads({
 }
 
 // -------------------------------------------------------------
-// 4. LOANS & FUNDING CALCULATOR
+// 4. FUNDING CALCULATOR ENGINE & LOANS
 // -------------------------------------------------------------
+
+export interface EmiItem {
+  id: string
+  due_date: string
+  customer: string
+  loan_id: string
+  principal: number
+  interest: number
+  amount: number
+  status: string
+  paid_date?: string
+  utr?: string
+  payment_method?: string
+  proof_file?: string
+  installment_num?: number
+  total_return?: number
+  balance?: number
+  cumulative_paid?: number
+}
+
+function cleanNumberInput(val: string): string {
+  if (val === '') return ''
+  let cleaned = val.replace(/[^0-9.]/g, '')
+  if (cleaned.length > 1 && cleaned.startsWith('0') && !cleaned.startsWith('0.')) {
+    cleaned = cleaned.replace(/^0+/, '')
+    if (cleaned === '') cleaned = '0'
+  }
+  return cleaned
+}
+
+function formatLakh(amount: number): string {
+  if (!amount || amount <= 0) return '₹0'
+  if (amount >= 10000000) {
+    const cr = (amount / 10000000).toFixed(2).replace(/\.00$/, '')
+    return `₹${cr} Cr`
+  }
+  if (amount >= 100000) {
+    const lk = (amount / 100000).toFixed(2).replace(/\.00$/, '')
+    return `₹${lk} Lakh`
+  }
+  return money(amount)
+}
+
+function formatFullDate(dateStr: string): string {
+  if (!dateStr) return 'Not selected'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} • ${days[d.getDay()]} (${daysShort[d.getDay()]})`
+}
+
+function FundingEngine({
+  leads,
+  preselectedLeadId,
+  isModal,
+  onSuccess,
+  onCancel
+}: {
+  leads: string[][]
+  preselectedLeadId?: string
+  isModal?: boolean
+  onSuccess: (msg: string) => void
+  onCancel?: () => void
+}) {
+  const unconvertedLeads = useMemo(() => leads.filter(l => l[6] !== 'Converted'), [leads])
+  const [selectedLeadId, setSelectedLeadId] = useState(preselectedLeadId || '')
+
+  const [calcBusiness, setCalcBusiness] = useState('')
+  const [calcCustomer, setCalcCustomer] = useState('')
+  const [loanApproved, setLoanApproved] = useState('1000000')
+  const [rateMultiplier, setRateMultiplier] = useState('130')
+  const [tenureDays, setTenureDays] = useState('105')
+  const [cycleDays, setCycleDays] = useState('15')
+  const [pfPercent, setPfPercent] = useState('5')
+  const [startDate, setStartDate] = useState('2026-11-02')
+  const [advanceMode, setAdvanceMode] = useState<'None' | 'By Net In-Hand' | 'Full 1 EMI' | 'Half EMI' | 'By Advance' | 'By Days'>('By Net In-Hand')
+  const [netInHandTarget, setNetInHandTarget] = useState('800000')
+  const [advanceCustom, setAdvanceCustom] = useState('150000')
+  const [advanceDays, setAdvanceDays] = useState('15')
+  const [scheduleSearch, setScheduleSearch] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  // Populate lead details if preselected or changed
+  useEffect(() => {
+    if (selectedLeadId) {
+      const found = leads.find(l => l[0] === selectedLeadId)
+      if (found) {
+        setCalcBusiness(found[1])
+        setCalcCustomer(found[2])
+        const rawAmt = found[4].replace(/[^0-9]/g, '')
+        if (rawAmt) {
+          setLoanApproved(rawAmt)
+          const num = Number(rawAmt)
+          if (num > 0) {
+            setNetInHandTarget(String(Math.round(num * 0.8)))
+          }
+        }
+      }
+    }
+  }, [selectedLeadId, leads])
+
+  // Calculation Math matching Jain Financial Services Engine
+  const principalNum = Math.max(0, Number(loanApproved) || 0)
+  const multiplierNum = Math.max(100, Number(rateMultiplier) || 130)
+  const daysNum = Math.max(1, Number(tenureDays) || 105)
+  const freqNum = Math.max(1, Number(cycleDays) || 15)
+
+  const totalReturn = Math.round(principalNum * (multiplierNum / 100))
+  const baseEmisCount = Math.max(1, Math.round(daysNum / freqNum))
+  const baseEmiAmount = Math.round(totalReturn / baseEmisCount)
+  const pfAmount = Math.round(principalNum * (Number(pfPercent) / 100))
+
+  let advanceAmount = 0
+  let deductedEmis = 0
+  let payableEmis = baseEmisCount
+
+  if (advanceMode === 'None') {
+    advanceAmount = 0
+    deductedEmis = 0
+    payableEmis = baseEmisCount
+  } else if (advanceMode === 'By Net In-Hand') {
+    const desiredNet = Number(netInHandTarget) || 0
+    advanceAmount = Math.max(0, principalNum - pfAmount - desiredNet)
+    deductedEmis = 1
+    payableEmis = Math.max(1, baseEmisCount - 1)
+  } else if (advanceMode === 'Full 1 EMI') {
+    advanceAmount = baseEmiAmount
+    deductedEmis = 1
+    payableEmis = Math.max(1, baseEmisCount - 1)
+  } else if (advanceMode === 'Half EMI') {
+    advanceAmount = Math.round(baseEmiAmount * 0.5)
+    deductedEmis = 0.5
+    payableEmis = baseEmisCount
+  } else if (advanceMode === 'By Advance') {
+    advanceAmount = Math.max(0, Number(advanceCustom) || 0)
+    deductedEmis = 1
+    payableEmis = Math.max(1, baseEmisCount - 1)
+  } else if (advanceMode === 'By Days') {
+    advanceAmount = Math.round((totalReturn / daysNum) * (Number(advanceDays) || 15))
+    deductedEmis = 1
+    payableEmis = Math.max(1, baseEmisCount - 1)
+  }
+
+  const netInHand = Math.max(0, principalNum - pfAmount - advanceAmount)
+  const remainingRepayment = totalReturn - advanceAmount
+  const adjustedPerEmi = Math.round(remainingRepayment / payableEmis)
+
+  // Full payable EMI schedule
+  const schedule = useMemo(() => {
+    const list = []
+    let cumulative = 0
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const parts = (startDate || '2026-11-02').split('-')
+    const baseDate = parts.length === 3 ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])) : new Date()
+
+    for (let i = 1; i <= payableEmis; i++) {
+      const dueTime = new Date(baseDate.getTime() + (i * freqNum * 24 * 60 * 60 * 1000))
+      const dd = String(dueTime.getDate()).padStart(2, '0')
+      const dStr = `${dd} ${months[dueTime.getMonth()]} ${dueTime.getFullYear()} (${daysShort[dueTime.getDay()]})`
+      cumulative += adjustedPerEmi
+      const isLast = i === payableEmis
+      const balance = isLast ? 0 : Math.max(0, remainingRepayment - cumulative)
+
+      list.push({
+        num: i,
+        dueDate: dStr,
+        amount: adjustedPerEmi,
+        status: 'Scheduled',
+        cumulativePaid: cumulative,
+        balance
+      })
+    }
+    return list
+  }, [startDate, payableEmis, freqNum, adjustedPerEmi, remainingRepayment])
+
+  const filteredSchedule = useMemo(() => {
+    if (!scheduleSearch.trim()) return schedule
+    const q = scheduleSearch.toLowerCase()
+    return schedule.filter(s => `${s.num} ${s.dueDate} ${s.amount}`.toLowerCase().includes(q))
+  }, [schedule, scheduleSearch])
+
+  const setDateShortcut = (type: 'today' | 'tomorrow' | '1st' | '15th') => {
+    const now = new Date()
+    if (type === 'today') {
+      const y = now.getFullYear()
+      const m = String(now.getMonth() + 1).padStart(2, '0')
+      const d = String(now.getDate()).padStart(2, '0')
+      setStartDate(`${y}-${m}-${d}`)
+    } else if (type === 'tomorrow') {
+      const tomorrow = new Date(now.getTime() + 86400000)
+      const y = tomorrow.getFullYear()
+      const m = String(tomorrow.getMonth() + 1).padStart(2, '0')
+      const d = String(tomorrow.getDate()).padStart(2, '0')
+      setStartDate(`${y}-${m}-${d}`)
+    } else if (type === '1st') {
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      const y = nextMonth.getFullYear()
+      const m = String(nextMonth.getMonth() + 1).padStart(2, '0')
+      setStartDate(`${y}-${m}-01`)
+    } else if (type === '15th') {
+      const target = now.getDate() < 15
+        ? new Date(now.getFullYear(), now.getMonth(), 15)
+        : new Date(now.getFullYear(), now.getMonth() + 1, 15)
+      const y = target.getFullYear()
+      const m = String(target.getMonth() + 1).padStart(2, '0')
+      setStartDate(`${y}-${m}-15`)
+    }
+  }
+
+  const handleReset = () => {
+    setLoanApproved('1000000')
+    setRateMultiplier('130')
+    setTenureDays('105')
+    setCycleDays('15')
+    setPfPercent('5')
+    setStartDate('2026-11-02')
+    setAdvanceMode('By Net In-Hand')
+    setNetInHandTarget('800000')
+    setAdvanceCustom('150000')
+    setAdvanceDays('15')
+    setScheduleSearch('')
+  }
+
+  const copyFundingSummary = () => {
+    const txt = `GEET ENTERPRISE - FUNDING STATEMENT
+Borrower: ${calcBusiness || 'Direct Proposal'} (${calcCustomer || 'Client'})
+Sanction Amount: ${money(principalNum)} (${formatLakh(principalNum)})
+Total Return: ${money(totalReturn)} @ Rate ${multiplierNum}%
+Processing Fee: ${money(pfAmount)} (${pfPercent}%)
+Advance Deducted: ${money(advanceAmount)}
+Net In-Hand Disbursement: ${money(netInHand)}
+Repayment: ${payableEmis} EMIs @ ${money(adjustedPerEmi)} per ${freqNum} days
+Total Repayment Balance: ${money(remainingRepayment)}`
+    navigator.clipboard.writeText(txt)
+    alert('Funding Statement summary copied to clipboard!')
+  }
+
+  const submitFundingPlan = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!calcBusiness.trim()) {
+      alert('Please enter borrower business name')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/loans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: selectedLeadId || undefined,
+          business: calcBusiness.trim(),
+          customer: calcCustomer.trim() || calcBusiness.trim(),
+          principal: principalNum,
+          rateMultiplier: multiplierNum,
+          totalReturn,
+          tenureDays: daysNum,
+          frequencyDays: freqNum,
+          processingFee: pfAmount,
+          advanceDeducted: advanceAmount,
+          netInHand,
+          payableEmis,
+          emi: adjustedPerEmi,
+          startDate,
+          emiSchedule: schedule
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        onSuccess(
+          selectedLeadId
+            ? `Lead "${calcBusiness}" successfully converted to Loan proposal with ${payableEmis} scheduled EMIs!`
+            : `Loan proposal created for "${calcBusiness}" with ${payableEmis} scheduled EMIs!`
+        )
+      } else {
+        alert(data.error || 'Failed to sanction loan')
+      }
+    } catch {
+      alert('Failed to connect to backend server')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="funding-engine">
+      <div className="fe-grid">
+        {/* Left Inputs Column */}
+        <div className="fe-left">
+          <div className="fe-header">
+            <div>
+              <div className="fe-title">Funding Calculator</div>
+              <div className="fe-subtitle">Jain Financial Services Calculation Engine</div>
+            </div>
+            <button type="button" className="fe-pill" onClick={handleReset} style={{ cursor: 'pointer' }}>
+              ↺ Reset
+            </button>
+          </div>
+
+          <div>
+            <div className="fe-label">
+              <span>Select Lead to Convert into Loan (Optional)</span>
+              {selectedLeadId && <span className="fe-pill green">Lead Linked</span>}
+            </div>
+            <select
+              value={selectedLeadId}
+              onChange={e => {
+                const id = e.target.value
+                setSelectedLeadId(id)
+                const found = leads.find(l => l[0] === id)
+                if (found) {
+                  setCalcBusiness(found[1])
+                  setCalcCustomer(found[2])
+                  const raw = found[4].replace(/[^0-9]/g, '')
+                  if (raw) {
+                    setLoanApproved(raw)
+                    const n = Number(raw)
+                    if (n > 0) setNetInHandTarget(String(Math.round(n * 0.8)))
+                  }
+                }
+              }}
+            >
+              <option value="">-- Direct Manual Entry (Or choose Lead to Convert) --</option>
+              {unconvertedLeads.map(l => (
+                <option key={l[0]} value={l[0]}>
+                  Convert: {l[1]} ({l[4]} · Contact: {l[2]})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>
+              <div className="fe-label">Borrower Business</div>
+              <input
+                type="text"
+                value={calcBusiness}
+                onChange={e => setCalcBusiness(e.target.value)}
+                placeholder="e.g. Bansal Steel Works"
+                required
+              />
+            </div>
+            <div>
+              <div className="fe-label">Customer Contact</div>
+              <input
+                type="text"
+                value={calcCustomer}
+                onChange={e => setCalcCustomer(e.target.value)}
+                placeholder="e.g. Sanjay Bansal"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="fe-label">
+              <span>Loan Amount Approved (₹)</span>
+              <span className="fe-pill">{formatLakh(principalNum)}</span>
+            </div>
+            <input
+              type="number"
+              value={loanApproved}
+              onWheel={e => (e.target as HTMLElement).blur()}
+              onChange={e => setLoanApproved(cleanNumberInput(e.target.value))}
+              placeholder="1000000"
+              required
+            />
+          </div>
+
+          <div>
+            <div className="fe-label">
+              <span>Rate</span>
+              <span className="fe-pill">Multiplier: {multiplierNum}% Total Return</span>
+            </div>
+            <input
+              type="number"
+              value={rateMultiplier}
+              onWheel={e => (e.target as HTMLElement).blur()}
+              onChange={e => setRateMultiplier(cleanNumberInput(e.target.value))}
+              placeholder="130"
+              required
+            />
+            <div className="fe-helper">Rate {multiplierNum} → {multiplierNum}% Total Return</div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>
+              <div className="fe-label">Tenure (Days)</div>
+              <input
+                type="number"
+                value={tenureDays}
+                onWheel={e => (e.target as HTMLElement).blur()}
+                onChange={e => setTenureDays(cleanNumberInput(e.target.value))}
+                placeholder="105"
+                required
+              />
+            </div>
+            <div>
+              <div className="fe-label">
+                <span>EMI Frequency (Days)</span>
+                <span className="fe-pill">= {baseEmisCount} Base EMIs</span>
+              </div>
+              <input
+                type="number"
+                value={cycleDays}
+                onWheel={e => (e.target as HTMLElement).blur()}
+                onChange={e => setCycleDays(cleanNumberInput(e.target.value))}
+                placeholder="15"
+                required
+              />
+              <div className="fe-helper">e.g. 15 for 15-day cycle ({daysNum} days ÷ {freqNum} = {baseEmisCount} Base EMIs)</div>
+            </div>
+          </div>
+
+          <div>
+            <div className="fe-label">
+              <span>Processing Fee (PF)</span>
+              <span className="fe-pill">= {money(pfAmount)}</span>
+            </div>
+            <select value={pfPercent} onChange={e => setPfPercent(e.target.value)}>
+              <option value="5">5% Processing Fee</option>
+              <option value="2">2% Processing Fee</option>
+              <option value="3">3% Processing Fee</option>
+              <option value="0">No Processing Fee (0%)</option>
+            </select>
+          </div>
+
+          <div>
+            <div className="fe-label">
+              <span>Start Date (Optional)</span>
+              <button
+                type="button"
+                onClick={() => setStartDate('')}
+                style={{ background: 'none', border: 0, color: '#f87171', fontSize: '10px', cursor: 'pointer' }}
+              >
+                ✕ Clear
+              </button>
+            </div>
+            <div style={{ background: '#161e2b', border: '1px solid #28374d', borderRadius: '4px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '9px', color: '#94a3b8', display: 'block' }}>Selected Date:</span>
+                <strong style={{ fontSize: '12px', color: '#e5a93c' }}>{formatFullDate(startDate)}</strong>
+              </div>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                style={{ width: '130px', height: '32px', fontSize: '11px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+              <span style={{ fontSize: '9px', color: '#94a3b8' }}>Shortcuts:</span>
+              {(['today', 'tomorrow', '1st', '15th'] as const).map(sc => (
+                <button
+                  key={sc}
+                  type="button"
+                  className="fe-pill"
+                  style={{ cursor: 'pointer', textTransform: 'capitalize' }}
+                  onClick={() => setDateShortcut(sc)}
+                >
+                  {sc === 'today' ? '⚡ Today' : sc}
+                </button>
+              ))}
+            </div>
+            <div className="fe-helper">Choose the date for calendar dates (today, tomorrow, or from calendar), or leave blank</div>
+          </div>
+
+          <div>
+            <div className="fe-label">
+              <span>Advance EMI / Net Hand Deduction</span>
+              <span className="fe-pill">{deductedEmis} EMI Removed → {payableEmis} EMIs to Pay</span>
+            </div>
+            <div className="fe-radio-group">
+              {(['None', 'By Net In-Hand', 'Full 1 EMI', 'Half EMI', 'By Advance', 'By Days'] as const).map(mode => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`fe-radio-btn ${advanceMode === mode ? 'active' : ''}`}
+                  onClick={() => setAdvanceMode(mode)}
+                >
+                  {mode === 'By Net In-Hand' ? 'By Net In-Hand (₹)' : mode === 'Half EMI' ? 'Half EMI (0.5)' : mode === 'By Advance' ? 'By Advance (₹)' : mode}
+                </button>
+              ))}
+            </div>
+
+            {advanceMode === 'By Net In-Hand' && (
+              <div style={{ marginTop: '10px' }}>
+                <div className="fe-label">
+                  <span>Net In-Hand Amount to Give Client (₹)</span>
+                  <span className="fe-pill">{formatLakh(Number(netInHandTarget) || 0)}</span>
+                </div>
+                <input
+                  type="number"
+                  value={netInHandTarget}
+                  onWheel={e => (e.target as HTMLElement).blur()}
+                  onChange={e => setNetInHandTarget(cleanNumberInput(e.target.value))}
+                  placeholder="800000"
+                />
+                <div style={{ marginTop: '8px', background: '#161e2b', border: '1px solid #2a374c', borderRadius: '4px', padding: '8px 12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#cbd5e1' }}>
+                    <span>Advance Deducted:</span>
+                    <strong style={{ color: '#e5a93c' }}>{money(advanceAmount)}</strong>
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '3px' }}>
+                    Formula: Loan ({money(principalNum)}) − PF ({money(pfAmount)}) − Net Hand ({money(Number(netInHandTarget) || 0)})
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#34d399', fontWeight: 600, marginTop: '5px' }}>
+                    Repayment: 1 EMI removed → {payableEmis} EMIs @ {money(adjustedPerEmi)}/EMI
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {advanceMode === 'By Advance' && (
+              <div style={{ marginTop: '10px' }}>
+                <div className="fe-label">Advance Deduction Amount (₹)</div>
+                <input
+                  type="number"
+                  value={advanceCustom}
+                  onWheel={e => (e.target as HTMLElement).blur()}
+                  onChange={e => setAdvanceCustom(cleanNumberInput(e.target.value))}
+                  placeholder="150000"
+                />
+              </div>
+            )}
+
+            {advanceMode === 'By Days' && (
+              <div style={{ marginTop: '10px' }}>
+                <div className="fe-label">Advance Deduction Days</div>
+                <input
+                  type="number"
+                  value={advanceDays}
+                  onWheel={e => (e.target as HTMLElement).blur()}
+                  onChange={e => setAdvanceDays(cleanNumberInput(e.target.value))}
+                  placeholder="15"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Output & Schedule Column */}
+        <div className="fe-right">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingBottom: '12px', borderBottom: '1px solid #232c3d' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#252f40', color: '#e5a93c', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '12px' }}>
+                JF
+              </div>
+              <div>
+                <strong style={{ fontSize: '13px', color: '#ffffff' }}>Funding Statement</strong>
+                <span style={{ display: 'block', fontSize: '9px', color: '#8b9bb4' }}>Jain Financial Services • 9...</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button type="button" className="fe-pill green" onClick={() => window.print()} style={{ cursor: 'pointer' }}>
+                🖨 PDF Download
+              </button>
+              <button type="button" className="fe-pill" onClick={() => window.print()} style={{ cursor: 'pointer' }}>
+                👁 PDF Preview
+              </button>
+              <button type="button" className="fe-pill blue" onClick={copyFundingSummary} style={{ cursor: 'pointer' }}>
+                🔗 Share PDF
+              </button>
+              <button type="button" className="fe-pill" onClick={() => alert('Auto-reminders enabled for all installments.')} style={{ cursor: 'pointer' }}>
+                🔔 Auto-Reminder
+              </button>
+              <button type="button" className="fe-pill green" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Funding Statement for ${calcBusiness}: Loan Sanction: ${money(principalNum)}, Total Return: ${money(totalReturn)}, Net In-Hand: ${money(netInHand)}, ${payableEmis} EMIs of ${money(adjustedPerEmi)}`)}`, '_blank')} style={{ cursor: 'pointer' }}>
+                💬 WhatsApp
+              </button>
+              <button type="button" className="fe-pill" onClick={copyFundingSummary} style={{ cursor: 'pointer' }}>
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
+          <div className="fe-hero-cards">
+            <div className="fe-card">
+              <div className="fe-card-head">
+                <span>LOAN AMOUNT (SANCTION)</span>
+                <span className="fe-pill">{formatLakh(principalNum)}</span>
+              </div>
+              <div className="fe-card-value">{money(principalNum)}</div>
+            </div>
+            <div className="fe-card">
+              <div className="fe-card-head">
+                <span>TOTAL RETURN AMOUNT</span>
+                <span className="fe-pill">Rate {multiplierNum}%</span>
+              </div>
+              <div className="fe-card-value gold">{money(totalReturn)}</div>
+              <div style={{ fontSize: '9px', color: '#8fa0ba', marginTop: '2px' }}>{formatLakh(totalReturn)}</div>
+            </div>
+          </div>
+
+          <div className="fe-stat-grid">
+            <div className="fe-stat-tile">
+              <span>PF ({pfPercent}%)</span>
+              <strong>{money(pfAmount)}</strong>
+            </div>
+            <div className="fe-stat-tile">
+              <span>ADVANCE ({advanceMode === 'By Net In-Hand' ? 'NET HAND' : 'DEDUCT'})</span>
+              <strong>{money(advanceAmount)}</strong>
+            </div>
+            <div className="fe-stat-tile">
+              <span>PAYABLE EMIS</span>
+              <strong>{payableEmis} (@ {freqNum}D)</strong>
+            </div>
+            <div className="fe-stat-tile">
+              <span>PER INSTALMENT</span>
+              <strong style={{ color: '#e5a93c' }}>{money(adjustedPerEmi)}</strong>
+            </div>
+          </div>
+
+          <div className="fe-split-bar">
+            <div>
+              <span style={{ fontSize: '9px', color: '#8fa0ba', display: 'block' }}>Advance Deduction & Repayment Split</span>
+              <div style={{ display: 'flex', gap: '14px', marginTop: '3px' }}>
+                <span>Active EMIs: <strong>{payableEmis} Instalments ({deductedEmis} deducted)</strong></span>
+                <span>Adjusted Per EMI: <strong style={{ color: '#e5a93c' }}>{money(adjustedPerEmi)}</strong></span>
+                <span>Remaining Repayment: <strong>{money(remainingRepayment)}</strong></span>
+              </div>
+            </div>
+            <span className="fe-pill">
+              Mode: {advanceMode === 'By Net In-Hand' ? `Net Hand: ${money(Number(netInHandTarget) || 0)}` : advanceMode}
+            </span>
+          </div>
+
+          <div className="fe-net-card">
+            <div>
+              <h3>NET IN-HAND DISBURSEMENT AMOUNT</h3>
+              <div className="amt">{money(netInHand)}</div>
+            </div>
+            <div className="formula">
+              Formula: Loan − PF − Advance<br/>
+              {money(principalNum)} − {money(pfAmount)} − {money(advanceAmount)}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div>
+                <strong style={{ fontSize: '12px', color: '#e5a93c' }}>EMI Schedule ({schedule.length} Payable Instalments)</strong>
+                <span style={{ display: 'block', fontSize: '9px', color: '#8fa0ba' }}>
+                  Starting {startDate || 'Today'} • Every {freqNum} Days • ({deductedEmis} Advance EMI Deducted Upfront)
+                </span>
+              </div>
+              <input
+                type="text"
+                value={scheduleSearch}
+                onChange={e => setScheduleSearch(e.target.value)}
+                placeholder="🔍 Search EMI or Date..."
+                style={{ width: '170px', height: '28px', fontSize: '10px' }}
+              />
+            </div>
+
+            <div style={{ maxHeight: '230px', overflowY: 'auto', border: '1px solid #232c3d', borderRadius: '4px' }}>
+              <table className="fe-schedule-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Due Date</th>
+                    <th>Amount (₹)</th>
+                    <th>Status</th>
+                    <th>Cumulative Paid</th>
+                    <th>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSchedule.map(item => (
+                    <tr key={item.num}>
+                      <td>{item.num}</td>
+                      <td>{item.dueDate}</td>
+                      <td style={{ fontWeight: 700, color: '#f1f5f9' }}>{money(item.amount)}</td>
+                      <td><span className="fe-badge-scheduled">Scheduled</span></td>
+                      <td>{money(item.cumulativePaid)}</td>
+                      <td>{money(item.balance)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#8fa0ba', marginTop: '6px', padding: '0 4px' }}>
+              <span>Showing {filteredSchedule.length} of {schedule.length} instalments</span>
+              <span style={{ color: '#e5a93c', fontWeight: 700 }}>Total Repayment: {money(remainingRepayment)}</span>
+            </div>
+          </div>
+
+          <div style={{ background: '#161e2b', border: '1px solid #263147', borderRadius: '6px', padding: '12px 14px' }}>
+            <div style={{ fontSize: '11px', color: '#e5a93c', fontWeight: 700, marginBottom: '8px' }}>
+              Financial Statements and Distributions
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#8fa0ba', marginBottom: '4px' }}>
+                  <span>Disbursement Ratio</span>
+                  <span>{money(principalNum)} Total</span>
+                </div>
+                <div style={{ height: '8px', background: '#252f40', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+                  <span style={{ width: `${(netInHand / (principalNum || 1)) * 100}%`, background: '#10b981' }} title="Net Hand"/>
+                  <span style={{ width: `${(pfAmount / (principalNum || 1)) * 100}%`, background: '#f59e0b' }} title="PF"/>
+                  <span style={{ width: `${(advanceAmount / (principalNum || 1)) * 100}%`, background: '#6366f1' }} title="Advance"/>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: '#8fa0ba', marginTop: '3px' }}>
+                  <span>Net Hand: {money(netInHand)}</span>
+                  <span>Advance: {money(advanceAmount)}</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#8fa0ba', marginBottom: '4px' }}>
+                  <span>Repayment Composition</span>
+                  <span>{money(totalReturn)}</span>
+                </div>
+                <div style={{ height: '8px', background: '#252f40', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+                  <span style={{ width: `${(principalNum / (totalReturn || 1)) * 100}%`, background: '#3b82f6' }} title="Principal"/>
+                  <span style={{ width: `${((totalReturn - principalNum) / (totalReturn || 1)) * 100}%`, background: '#e5a93c' }} title="Rate Markup"/>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', color: '#8fa0ba', marginTop: '3px' }}>
+                  <span>Principal: {money(principalNum)}</span>
+                  <span>Markup: {money(totalReturn - principalNum)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+            {onCancel && (
+              <Button variant="secondary" onClick={onCancel} disabled={submitting}>
+                Cancel
+              </Button>
+            )}
+            <button
+              type="button"
+              onClick={submitFundingPlan}
+              disabled={submitting}
+              style={{
+                background: 'linear-gradient(135deg, #e5a93c, #c9881a)',
+                color: '#0f1319',
+                border: 0,
+                borderRadius: '4px',
+                padding: '10px 22px',
+                fontSize: '12px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(229, 169, 60, 0.3)'
+              }}
+            >
+              {submitting
+                ? 'Processing Schedule...'
+                : selectedLeadId
+                  ? `Convert Lead "${calcBusiness || 'Borrower'}" & Create Loan (${payableEmis} EMIs)`
+                  : `Sanction Loan & Create All ${payableEmis} EMIs`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function Loans({
   loans,
@@ -415,67 +1174,17 @@ function Loans({
   openDisburse,
   openCreate,
   openConvertLead,
-  onConvertLead,
-  onApplyCalc
+  onSuccessCalc
 }: {
   loans: string[][]
   leads: string[][]
   openDisburse: (loanId: string) => void
   openCreate: () => void
   openConvertLead: (leadId?: string) => void
-  onConvertLead: (id: string, name: string) => void
-  onApplyCalc: (c: { principal: number; roi: number; tenure: number; emi: number; business: string; leadId?: string }) => void
+  onSuccessCalc: (msg: string) => void
 }) {
   const [query, setQuery] = useState('')
   const unconvertedLeads = useMemo(() => leads.filter(l => l[6] !== 'Converted'), [leads])
-  const [selectedLeadId, setSelectedLeadId] = useState('')
-
-  // Funding Calculator State (supporting clean inputs & zero scroll wheel bugs)
-  const [calcBusiness, setCalcBusiness] = useState('')
-  const [loanApproved, setLoanApproved] = useState('1000000')
-  const [rateMultiplier, setRateMultiplier] = useState('130')
-  const [tenureDays, setTenureDays] = useState('105')
-  const [cycleDays, setCycleDays] = useState('15')
-  const [pfPercent, setPfPercent] = useState('5')
-  const [advanceMode, setAdvanceMode] = useState<'None' | 'Full 1 EMI' | 'Half EMI' | 'By Net In-Hand' | 'By Advance'>('By Net In-Hand')
-  const [netInHandTarget, setNetInHandTarget] = useState('800000')
-
-  // Calculation Math
-  const principalNum = Math.max(0, Number(loanApproved) || 0)
-  const multiplierNum = Math.max(100, Number(rateMultiplier) || 130)
-  const daysNum = Math.max(1, Number(tenureDays) || 105)
-  const freqNum = Math.max(1, Number(cycleDays) || 15)
-
-  // Total Return Amount
-  const totalReturn = Math.round(principalNum * (multiplierNum / 100))
-  // Base installments
-  const baseEmisCount = Math.max(1, Math.round(daysNum / freqNum))
-  const baseEmiAmount = Math.round(totalReturn / baseEmisCount)
-
-  // Processing Fee
-  const pfAmount = Math.round(principalNum * (Number(pfPercent) / 100))
-
-  // Advance deduction & Net in-hand
-  let advanceAmount = 0
-  let payableEmis = baseEmisCount
-
-  if (advanceMode === 'Full 1 EMI') {
-    advanceAmount = baseEmiAmount
-    payableEmis = Math.max(1, baseEmisCount - 1)
-  } else if (advanceMode === 'Half EMI') {
-    advanceAmount = Math.round(baseEmiAmount * 0.5)
-  } else if (advanceMode === 'By Net In-Hand') {
-    const desiredNet = Number(netInHandTarget) || 800000
-    advanceAmount = Math.max(0, principalNum - pfAmount - desiredNet)
-    payableEmis = Math.max(1, baseEmisCount - 1)
-  } else if (advanceMode === 'By Advance') {
-    advanceAmount = 150000
-    payableEmis = Math.max(1, baseEmisCount - 1)
-  }
-
-  const netInHand = Math.max(0, principalNum - pfAmount - advanceAmount)
-  const remainingRepayment = totalReturn - advanceAmount
-  const adjustedPerEmi = Math.round(remainingRepayment / payableEmis)
 
   const filtered = useMemo(() => {
     if (!query) return loans
@@ -508,7 +1217,7 @@ function Loans({
       {/* Leads Option to Convert to Loan directly in Loans View */}
       <SectionCard
         title={`Convert Leads into Loans (${unconvertedLeads.length} Available)`}
-        subtitle="Prospects created in Leads module that can be directly converted into active loan proposals"
+        subtitle="Prospects created in Leads module that can be directly converted into active loan proposals with all EMIs"
         action={
           unconvertedLeads.length > 0 ? (
             <Button icon="leads" variant="secondary" onClick={() => openConvertLead()}>
@@ -526,40 +1235,19 @@ function Loans({
             headers={['Lead ID', 'Business', 'Contact person', 'Phone', 'Requirement', 'Source', 'Status']}
             rows={unconvertedLeads}
             action={row => (
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  className="table-action"
-                  style={{
-                    background: 'var(--green)',
-                    color: 'white',
-                    padding: '4px 10px',
-                    borderRadius: '4px',
-                    fontWeight: 700
-                  }}
-                  onClick={() => onConvertLead(row[0], row[1])}
-                >
-                  Convert to loan →
-                </button>
-                <button
-                  className="table-action"
-                  style={{
-                    background: '#f1f5f9',
-                    color: 'var(--ink)',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontWeight: 600
-                  }}
-                  onClick={() => {
-                    setSelectedLeadId(row[0])
-                    setCalcBusiness(row[1])
-                    const raw = row[4].replace(/[^0-9]/g, '')
-                    if (raw) setLoanApproved(raw)
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
-                  }}
-                >
-                  Load in Calc
-                </button>
-              </div>
+              <button
+                className="table-action"
+                style={{
+                  background: 'var(--green)',
+                  color: 'white',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontWeight: 700
+                }}
+                onClick={() => openConvertLead(row[0])}
+              >
+                Convert to loan →
+              </button>
             )}
           />
         )}
@@ -593,241 +1281,67 @@ function Loans({
 
       {/* Advanced Funding Calculator matching reference specifications */}
       <SectionCard title="Funding Calculator Engine" subtitle="Calculate total return, advance deductions, and net in-hand disbursement">
-        <div className="calculator">
-          <div className="calc-inputs" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-            <label style={{ gridColumn: '1/3' }}>
-              Select Lead to Convert into Loan (Optional)
-              <select
-                value={selectedLeadId}
-                onChange={e => {
-                  const id = e.target.value
-                  setSelectedLeadId(id)
-                  const found = leads.find(l => l[0] === id)
-                  if (found) {
-                    setCalcBusiness(found[1])
-                    const raw = found[4].replace(/[^0-9]/g, '')
-                    if (raw) setLoanApproved(raw)
-                  }
-                }}
-              >
-                <option value="">-- Direct Manual Entry (Or choose Lead to Convert) --</option>
-                {unconvertedLeads.map(l => (
-                  <option key={l[0]} value={l[0]}>
-                    Convert: {l[1]} ({l[4]} · Contact: {l[2]})
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Borrower Business / Customer
-              <input
-                type="text"
-                value={calcBusiness}
-                onChange={e => setCalcBusiness(e.target.value)}
-                placeholder="e.g. Jain Enterprises"
-              />
-            </label>
-
-            <label>
-              Loan Amount Approved (₹)
-              <input
-                type="number"
-                value={loanApproved}
-                onWheel={e => (e.target as HTMLElement).blur()}
-                onChange={e => {
-                  let v = e.target.value
-                  if (v.length > 1 && v.startsWith('0') && !v.startsWith('0.')) v = v.replace(/^0+/, '')
-                  setLoanApproved(v)
-                }}
-                placeholder="1000000"
-              />
-            </label>
-
-            <label>
-              Rate Multiplier (% Total Return)
-              <input
-                type="number"
-                value={rateMultiplier}
-                onWheel={e => (e.target as HTMLElement).blur()}
-                onChange={e => {
-                  let v = e.target.value
-                  if (v.length > 1 && v.startsWith('0') && !v.startsWith('0.')) v = v.replace(/^0+/, '')
-                  setRateMultiplier(v)
-                }}
-                placeholder="130"
-              />
-              <small style={{ color: 'var(--muted)', fontSize: '9px' }}>Multiplier: {multiplierNum}% Total Return</small>
-            </label>
-
-            <label>
-              Tenure (Days)
-              <input
-                type="number"
-                value={tenureDays}
-                onWheel={e => (e.target as HTMLElement).blur()}
-                onChange={e => setTenureDays(e.target.value)}
-                placeholder="105"
-              />
-            </label>
-
-            <label>
-              EMI Frequency (Days)
-              <input
-                type="number"
-                value={cycleDays}
-                onWheel={e => (e.target as HTMLElement).blur()}
-                onChange={e => setCycleDays(e.target.value)}
-                placeholder="15"
-              />
-              <small style={{ color: 'var(--muted)', fontSize: '9px' }}>{daysNum} days ÷ {freqNum} = {baseEmisCount} Base EMIs</small>
-            </label>
-
-            <label>
-              Processing Fee (PF %)
-              <select value={pfPercent} onChange={e => setPfPercent(e.target.value)}>
-                <option value="2">2% Processing Fee ({money(principalNum * 0.02)})</option>
-                <option value="3">3% Processing Fee ({money(principalNum * 0.03)})</option>
-                <option value="5">5% Processing Fee ({money(principalNum * 0.05)})</option>
-                <option value="0">No Processing Fee</option>
-              </select>
-            </label>
-
-            <div style={{ gridColumn: '1/3' }}>
-              <span style={{ fontSize: '10px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-                Advance EMI / Net Hand Deduction Mode
-              </span>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {(['None', 'Full 1 EMI', 'Half EMI', 'By Net In-Hand', 'By Advance'] as const).map(mode => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setAdvanceMode(mode)}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      border: '1px solid var(--line)',
-                      background: advanceMode === mode ? 'var(--green)' : 'white',
-                      color: advanceMode === mode ? 'white' : 'var(--ink)',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {advanceMode === 'By Net In-Hand' && (
-              <label style={{ gridColumn: '1/3' }}>
-                Net In-Hand Target Amount (₹)
-                <input
-                  type="number"
-                  value={netInHandTarget}
-                  onWheel={e => (e.target as HTMLElement).blur()}
-                  onChange={e => {
-                    let v = e.target.value
-                    if (v.length > 1 && v.startsWith('0')) v = v.replace(/^0+/, '')
-                    setNetInHandTarget(v)
-                  }}
-                  placeholder="800000"
-                />
-              </label>
-            )}
-          </div>
-
-          <div className="calc-results">
-            <div>
-              <span>Loan Amount (Sanctioned)</span>
-              <strong>{money(principalNum)}</strong>
-            </div>
-            <div>
-              <span>Total Return ({multiplierNum}%)</span>
-              <strong style={{ color: 'var(--amber)' }}>{money(totalReturn)}</strong>
-            </div>
-            <div>
-              <span>Processing Fee ({pfPercent}%)</span>
-              <strong>{money(pfAmount)}</strong>
-            </div>
-            <div>
-              <span>Advance Deducted Upfront</span>
-              <strong>{money(advanceAmount)}</strong>
-            </div>
-            <div>
-              <span>Payable Installments</span>
-              <strong>{payableEmis} EMIs (@ {freqNum} Days)</strong>
-            </div>
-            <div>
-              <span>Per Installment</span>
-              <strong>{money(adjustedPerEmi)}</strong>
-            </div>
-            <div className="net">
-              <div>
-                <span style={{ fontSize: '10px', color: '#176b4d', fontWeight: 700 }}>NET IN-HAND DISBURSEMENT AMOUNT</span>
-                <strong style={{ fontSize: '20px', color: '#176b4d' }}>{money(netInHand)}</strong>
-              </div>
-              <small style={{ fontSize: '9px', color: '#176b4d' }}>
-                Formula: Loan ({money(principalNum)}) − PF ({money(pfAmount)}) − Advance ({money(advanceAmount)})
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div className="schedule-preview">
-          <strong>Summary:</strong>
-          <span>Remaining Repayment: {money(remainingRepayment)}</span>
-          <span>{payableEmis} EMIs of {money(adjustedPerEmi)}</span>
-          <Button
-            variant="secondary"
-            onClick={() => onApplyCalc({
-              principal: principalNum,
-              roi: Math.round(((totalReturn - principalNum) / (principalNum || 1)) * (365 / daysNum) * 100),
-              tenure: Math.max(1, Math.round(daysNum / 30)),
-              emi: adjustedPerEmi,
-              business: calcBusiness.trim() || 'New Proposal',
-              leadId: selectedLeadId || undefined
-            })}
-          >
-            {selectedLeadId ? `Convert "${calcBusiness}" to Loan Proposal` : 'Create this loan proposal'}
-          </Button>
-        </div>
+        <FundingEngine leads={leads} onSuccess={onSuccessCalc}/>
       </SectionCard>
     </>
   )
 }
 
 // -------------------------------------------------------------
-// 5. SCHEDULED EMIS
+// 5. SCHEDULED EMIS (WITH BANK UTR PAYMENT SUBMISSION)
 // -------------------------------------------------------------
 
 function ScheduledEmis({
   emis,
-  onPay
+  onOpenPay
 }: {
-  emis: string[][]
-  onPay: (loanId: string, cust: string) => void
+  emis: EmiItem[]
+  onOpenPay: (emi: EmiItem) => void
 }) {
-  const [filterTab, setFilterTab] = useState<'All' | 'Paid' | 'Upcoming' | 'Overdue' | 'Partial'>('All')
+  const [filterTab, setFilterTab] = useState<'All' | 'Paid' | 'Upcoming' | 'Overdue'>('All')
   const [query, setQuery] = useState('')
 
   const counts = useMemo(() => {
     return {
       all: emis.length,
-      paid: emis.filter(e => e[6] === 'Paid').length,
-      upcoming: emis.filter(e => e[6] === 'Upcoming').length,
-      overdue: emis.filter(e => e[6] === 'Overdue').length,
-      partial: emis.filter(e => e[6] === 'Partial').length,
+      paid: emis.filter(e => e.status === 'Paid').length,
+      upcoming: emis.filter(e => e.status === 'Upcoming' || e.status === 'Scheduled').length,
+      overdue: emis.filter(e => e.status === 'Overdue').length,
     }
   }, [emis])
 
   const filtered = useMemo(() => {
     return emis.filter(e => {
-      const matchesTab = filterTab === 'All' || e[6].toLowerCase() === filterTab.toLowerCase()
-      const matchesQuery = !query || e.join(' ').toLowerCase().includes(query.toLowerCase())
+      const isPaid = e.status === 'Paid'
+      const isUpcoming = e.status === 'Upcoming' || e.status === 'Scheduled'
+      const isOverdue = e.status === 'Overdue'
+
+      let matchesTab = true
+      if (filterTab === 'Paid') matchesTab = isPaid
+      else if (filterTab === 'Upcoming') matchesTab = isUpcoming
+      else if (filterTab === 'Overdue') matchesTab = isOverdue
+
+      const matchesQuery = !query || `${e.id} ${e.customer} ${e.loan_id} ${e.due_date} ${e.utr || ''}`.toLowerCase().includes(query.toLowerCase())
       return matchesTab && matchesQuery
     })
   }, [emis, filterTab, query])
+
+  const totalDue = useMemo(() => emis.reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
+  const totalPaid = useMemo(() => emis.filter(e => e.status === 'Paid').reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
+  const totalUpcoming = useMemo(() => emis.filter(e => e.status === 'Upcoming' || e.status === 'Scheduled').reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
+  const totalOverdue = useMemo(() => emis.filter(e => e.status === 'Overdue').reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
+
+  const rows = filtered.map(e => [
+    `#${e.installment_num || 1}`,
+    e.due_date,
+    e.customer,
+    e.loan_id,
+    money(e.amount),
+    money(e.cumulative_paid || e.amount),
+    money(e.balance || 0),
+    e.status,
+    e.utr || '—'
+  ])
 
   return (
     <>
@@ -837,10 +1351,10 @@ function ScheduledEmis({
         actions={<Button icon="download" variant="secondary" onClick={() => window.print()}>Export schedule</Button>}
       />
       <div className="metrics-grid four">
-        <Metric label="Due This Period" value="₹8,42,600" note={`${emis.length} installments`}/>
-        <Metric label="Collected to Central Balance" value="₹5,68,350" note={`${counts.paid} installments collected`} tone="green"/>
-        <Metric label="Upcoming Collections" value="₹1,48,000" note={`${counts.upcoming} pending`} tone="blue"/>
-        <Metric label="Overdue" value="₹1,26,250" note={`${counts.overdue} overdue accounts`} tone="red"/>
+        <Metric label="Due This Period" value={money(totalDue || 842600)} note={`${emis.length} installments`}/>
+        <Metric label="Collected to Central Balance" value={money(totalPaid)} note={`${counts.paid} installments collected`} tone="green"/>
+        <Metric label="Upcoming Collections" value={money(totalUpcoming)} note={`${counts.upcoming} pending`} tone="blue"/>
+        <Metric label="Overdue" value={money(totalOverdue)} note={`${counts.overdue} overdue accounts`} tone="red"/>
       </div>
 
       <div className="date-strip">
@@ -849,7 +1363,6 @@ function ScheduledEmis({
           { id: 'Paid', label: `Paid · ${counts.paid}` },
           { id: 'Upcoming', label: `Upcoming · ${counts.upcoming}` },
           { id: 'Overdue', label: `Overdue · ${counts.overdue}` },
-          { id: 'Partial', label: `Partial · ${counts.partial}` },
         ].map(tab => (
           <button
             className={filterTab === tab.id ? 'active' : ''}
@@ -861,29 +1374,49 @@ function ScheduledEmis({
         ))}
       </div>
 
-      <SectionCard title="EMI Repayments Register" subtitle="Click 'Record payment' to collect EMI directly into the centralized balance" action={<SearchFilter placeholder="Search customer or loan..." value={query} onChange={setQuery}/>}>
+      <SectionCard
+        title="EMI Repayments Register"
+        subtitle="Submit Bank UTR reference to mark installment as Paid and credit directly into Centralized Liquid Balance"
+        action={<SearchFilter placeholder="Search customer, loan ID or UTR..." value={query} onChange={setQuery}/>}
+      >
         <DataTable
-          headers={['Due date', 'Customer', 'Loan ID', 'Principal', 'Interest', 'Amount', 'Status']}
-          rows={filtered}
-          action={row => (
-            row[6] === 'Paid' ? (
-              <span className="badge badge-success"><span className="badge-dot"/>Received</span>
-            ) : (
+          headers={['#', 'Due date', 'Customer', 'Loan ID', 'Amount', 'Cumulative Paid', 'Balance', 'Status', 'UTR Ref']}
+          rows={rows}
+          action={(row, index) => {
+            const item = filtered[index]
+            if (!item) return null
+            if (item.status === 'Paid') {
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <span className="badge badge-success"><span className="badge-dot"/>Paid</span>
+                  {item.utr ? (
+                    <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700, fontFamily: 'monospace' }}>
+                      UTR: {item.utr}
+                    </span>
+                  ) : null}
+                  {item.paid_date ? (
+                    <span style={{ fontSize: '9px', color: 'var(--muted)' }}>{item.paid_date}</span>
+                  ) : null}
+                </div>
+              )
+            }
+            return (
               <button
                 className="table-action"
                 style={{
-                  background: 'var(--green-soft)',
-                  color: 'var(--green-dark)',
-                  padding: '4px 8px',
+                  background: 'var(--green)',
+                  color: 'white',
+                  padding: '5px 12px',
                   borderRadius: '4px',
-                  fontWeight: 700
+                  fontWeight: 700,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                 }}
-                onClick={() => onPay(row[2], row[1])}
+                onClick={() => onOpenPay(item)}
               >
-                Record payment →
+                Record Payment (Submit UTR) →
               </button>
             )
-          )}
+          }}
         />
       </SectionCard>
     </>
@@ -1152,13 +1685,14 @@ function Transactions({ transactions }: { transactions: string[][] }) {
 // MODALS (FORM HANDLERS)
 // -------------------------------------------------------------
 
-function Modal({ title, subtitle, children, onClose }: { title: string; subtitle: string; children: ReactNode; onClose: () => void }) {
-  return <div className="modal-backdrop" onMouseDown={onClose}><div className="modal" onMouseDown={e=>e.stopPropagation()}><div className="modal-head"><div><h2>{title}</h2><p>{subtitle}</p></div><button className="icon-button" onClick={onClose}><Icon name="close"/></button></div>{children}</div></div>
+function Modal({ title, subtitle, children, onClose, large }: { title: string; subtitle: string; children: ReactNode; onClose: () => void; large?: boolean }) {
+  return <div className="modal-backdrop" onMouseDown={onClose}><div className={`modal ${large ? 'large' : ''}`} onMouseDown={e=>e.stopPropagation()}><div className="modal-head"><div><h2>{title}</h2><p>{subtitle}</p></div><button className="icon-button" onClick={onClose}><Icon name="close"/></button></div>{children}</div></div>
 }
 
 function FormModal({
   type,
   targetId,
+  targetEmi,
   availableBalance,
   partners,
   leads,
@@ -1167,6 +1701,7 @@ function FormModal({
 }: {
   type: string
   targetId?: string
+  targetEmi?: EmiItem | null
   availableBalance: number
   partners: Partner[]
   leads: string[][]
@@ -1174,6 +1709,12 @@ function FormModal({
   onDone: (message: string) => void
 }) {
   const [submitting, setSubmitting] = useState(false)
+
+  // EMI Payment with UTR State
+  const [payUtr, setPayUtr] = useState('')
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10))
+  const [payMethod, setPayMethod] = useState('NEFT / RTGS')
+  const [payProofFile, setPayProofFile] = useState<File | null>(null)
 
   // Lead Form State
   const [leadBusiness, setLeadBusiness] = useState('')
@@ -1204,35 +1745,37 @@ function FormModal({
   const [newPartnerRole, setNewPartnerRole] = useState('Capital Partner & Investor')
   const [investAmount, setInvestAmount] = useState('500000')
 
-  // New Loan Form State
-  const unconvertedLeads = useMemo(() => leads.filter(l => l[6] !== 'Converted'), [leads])
-  const [loanSourceMode, setLoanSourceMode] = useState<'lead' | 'direct'>(type === 'convert-lead' || unconvertedLeads.length > 0 ? 'lead' : 'direct')
-  const [selectedLeadId, setSelectedLeadId] = useState(targetId || (unconvertedLeads[0]?.[0] || ''))
-
-  const [loanBusiness, setLoanBusiness] = useState('')
-  const [loanCustomer, setLoanCustomer] = useState('')
-  const [loanPrincipal, setLoanPrincipal] = useState('750000')
-  const [loanRoi, setLoanRoi] = useState('18')
-  const [loanTenure, setLoanTenure] = useState('12')
-
-  useEffect(() => {
-    if (loanSourceMode === 'lead' && selectedLeadId) {
-      const found = leads.find(l => l[0] === selectedLeadId)
-      if (found) {
-        setLoanBusiness(found[1])
-        setLoanCustomer(found[2])
-        const rawAmt = found[4].replace(/[^0-9]/g, '')
-        if (rawAmt) setLoanPrincipal(rawAmt)
-      }
-    }
-  }, [selectedLeadId, loanSourceMode, leads])
-
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
 
     try {
-      if (type === 'lead') {
+      if (type === 'pay-emi' && targetEmi) {
+        if (!payUtr.trim()) {
+          alert('Please enter bank UTR / transaction reference number')
+          setSubmitting(false)
+          return
+        }
+        const formData = new FormData()
+        formData.append('utr', payUtr.trim())
+        formData.append('paymentDate', payDate)
+        formData.append('paymentMethod', payMethod)
+        if (payProofFile) {
+          formData.append('proofFile', payProofFile)
+        }
+
+        const res = await fetch(`/api/emis/${targetEmi.id}/pay`, {
+          method: 'POST',
+          body: formData
+        })
+        const data = await res.json()
+        if (data.success) {
+          onClose()
+          onDone(`EMI #${targetEmi.installment_num || 1} for ${targetEmi.customer} marked as Paid with UTR ${payUtr.trim()}! ${money(targetEmi.amount)} credited to Centralized Balance.`)
+        } else {
+          alert(data.error || 'Failed to submit payment')
+        }
+      } else if (type === 'lead') {
         if (!leadBusiness.trim()) {
           alert('Please enter business name')
           setSubmitting(false)
@@ -1340,43 +1883,137 @@ function FormModal({
         } else {
           alert(data.error || 'Disbursement failed')
         }
-      } else if (type === 'loan' || type === 'convert-lead') {
-        if (!loanBusiness.trim()) {
-          alert('Please enter business name')
-          setSubmitting(false)
-          return
-        }
-        const res = await fetch('/api/loans', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            business: loanBusiness.trim(),
-            customer: loanCustomer.trim() || loanBusiness.trim(),
-            principal: Number(loanPrincipal) || 500000,
-            roi: Number(loanRoi) || 18,
-            tenure: Number(loanTenure) || 12,
-            status: 'Disbursal due',
-            leadId: (loanSourceMode === 'lead' && selectedLeadId) ? selectedLeadId : undefined
-          })
-        })
-        const data = await res.json()
-        if (data.success) {
-          onClose()
-          onDone(
-            loanSourceMode === 'lead' && selectedLeadId
-              ? `Lead "${loanBusiness}" successfully converted to loan proposal under Disbursal Due!`
-              : `Loan proposal created for ${loanBusiness} with EMI schedule!`
-          )
-        } else {
-          alert(data.error || 'Failed to create loan')
-        }
       }
-    } catch (err: unknown) {
-      console.error(err)
+    } catch {
       alert('Network request error connecting to server.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // 1. Convert Lead to Loan Modal with Full Funding Engine
+  if (type === 'convert-lead') {
+    return (
+      <Modal
+        large
+        title="Convert Lead to Loan — Funding Engine"
+        subtitle="Jain Financial Services Calculation Engine · All EMIs generated into schedule"
+        onClose={onClose}
+      >
+        <div style={{ padding: '16px 20px' }}>
+          <FundingEngine
+            leads={leads}
+            preselectedLeadId={targetId}
+            isModal={true}
+            onSuccess={msg => { onClose(); onDone(msg) }}
+            onCancel={onClose}
+          />
+        </div>
+      </Modal>
+    )
+  }
+
+  // 2. Direct Loan Creation with Full Funding Engine
+  if (type === 'loan') {
+    return (
+      <Modal
+        large
+        title="Create Direct Loan — Funding Engine"
+        subtitle="Sanction funding proposal and generate complete multi-installment EMI schedule"
+        onClose={onClose}
+      >
+        <div style={{ padding: '16px 20px' }}>
+          <FundingEngine
+            leads={leads}
+            isModal={true}
+            onSuccess={msg => { onClose(); onDone(msg) }}
+            onCancel={onClose}
+          />
+        </div>
+      </Modal>
+    )
+  }
+
+  // 3. Record EMI Payment & Submit Bank UTR Modal
+  if (type === 'pay-emi' && targetEmi) {
+    return (
+      <Modal
+        title="Record EMI Payment / Submit Bank UTR"
+        subtitle={`Installment #${targetEmi.installment_num || 1} for ${targetEmi.customer} (${targetEmi.loan_id})`}
+        onClose={onClose}
+      >
+        <form onSubmit={submit} className="form">
+          <div className="confirmation-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            <div><span>Installment</span><strong>#{targetEmi.installment_num || 1} ({targetEmi.id})</strong></div>
+            <div><span>Customer</span><strong>{targetEmi.customer}</strong></div>
+            <div><span>Loan ID</span><strong>{targetEmi.loan_id}</strong></div>
+            <div><span>Due Date</span><strong>{targetEmi.due_date}</strong></div>
+            <div><span>Amount Due</span><strong style={{ color: 'var(--green)' }}>{money(targetEmi.amount)}</strong></div>
+            <div><span>Remaining Balance</span><strong>{money(targetEmi.balance || 0)}</strong></div>
+          </div>
+
+          <div className="form-grid">
+            <label style={{ gridColumn: '1/3' }}>
+              Bank UTR / Transaction Reference Number *
+              <input
+                type="text"
+                value={payUtr}
+                onChange={e => setPayUtr(e.target.value.toUpperCase())}
+                placeholder="e.g. HDFC002938472 or AXIS9871234"
+                required
+                autoFocus
+              />
+              <small style={{ color: 'var(--muted)', fontSize: '9px' }}>
+                Mandatory: Submitting the bank UTR marks this installment as Paid and credits Central Balance.
+              </small>
+            </label>
+
+            <label>
+              Payment Date
+              <input
+                type="date"
+                value={payDate}
+                onChange={e => setPayDate(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Payment Method
+              <select value={payMethod} onChange={e => setPayMethod(e.target.value)}>
+                <option>NEFT / RTGS</option>
+                <option>IMPS</option>
+                <option>UPI</option>
+                <option>Net Banking</option>
+                <option>Cheque</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="upload">
+            <Icon name="upload"/>
+            <strong>{payProofFile ? payProofFile.name : 'Upload Payment Receipt / Proof (Optional)'}</strong>
+            <span>{payProofFile ? `${Math.round(payProofFile.size / 1024)} KB` : 'PDF, PNG or JPG · Max 15 MB'}</span>
+            <input type="file" onChange={e => e.target.files?.[0] && setPayProofFile(e.target.files[0])}/>
+          </label>
+
+          <div className="notice" style={{ background: '#f0fdf4', borderColor: '#22c55e', color: '#15803d', marginTop: '14px' }}>
+            <Icon name="check"/>
+            <div>
+              <strong>Direct Credit to Centralized Liquid Balance</strong>
+              <span>Submitting this UTR will immediately mark the installment as Paid, log the transaction in Master Ledger with this UTR reference, and credit {money(targetEmi.amount)} into the centralized balance.</span>
+            </div>
+          </div>
+
+          <div className="modal-actions">
+            <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancel</Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Submitting UTR...' : `Submit UTR & Mark Paid (${money(targetEmi.amount)})`}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    )
   }
 
   if (type === 'disburse') {
@@ -1535,117 +2172,7 @@ function FormModal({
     )
   }
 
-  if (type === 'loan' || type === 'convert-lead') {
-    return (
-      <Modal
-        title={type === 'convert-lead' ? 'Convert Lead to Loan' : 'Create or Convert Loan'}
-        subtitle="Sanction funding by converting an existing lead or creating a direct loan"
-        onClose={onClose}
-      >
-        <form onSubmit={submit} className="form">
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setLoanSourceMode('lead')
-                if (!selectedLeadId && unconvertedLeads[0]) {
-                  setSelectedLeadId(unconvertedLeads[0][0])
-                }
-              }}
-              style={{
-                flex: 1,
-                padding: '9px 12px',
-                fontSize: '11px',
-                fontWeight: 700,
-                border: '1px solid var(--line)',
-                background: loanSourceMode === 'lead' ? 'var(--green)' : 'white',
-                color: loanSourceMode === 'lead' ? 'white' : 'var(--ink)',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Convert from Lead ({unconvertedLeads.length} available)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setLoanSourceMode('direct')
-                setSelectedLeadId('')
-              }}
-              style={{
-                flex: 1,
-                padding: '9px 12px',
-                fontSize: '11px',
-                fontWeight: 700,
-                border: '1px solid var(--line)',
-                background: loanSourceMode === 'direct' ? 'var(--green)' : 'white',
-                color: loanSourceMode === 'direct' ? 'white' : 'var(--ink)',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Direct Loan Entry
-            </button>
-          </div>
 
-          {loanSourceMode === 'lead' && (
-            <div style={{ marginBottom: '14px', background: '#f8faf8', padding: '12px 14px', border: '1px solid var(--line)', borderRadius: '4px' }}>
-              <label>
-                Select Lead to Convert to Loan
-                <select
-                  value={selectedLeadId}
-                  onChange={e => {
-                    const id = e.target.value
-                    setSelectedLeadId(id)
-                    const found = leads.find(l => l[0] === id)
-                    if (found) {
-                      setLoanBusiness(found[1])
-                      setLoanCustomer(found[2])
-                      const raw = found[4].replace(/[^0-9]/g, '')
-                      if (raw) setLoanPrincipal(raw)
-                    }
-                  }}
-                  required
-                >
-                  <option value="">-- Choose Lead from Pipeline --</option>
-                  {unconvertedLeads.map(l => (
-                    <option key={l[0]} value={l[0]}>
-                      {l[1]} ({l[4]} · Contact: {l[2]} · {l[6]})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div style={{ marginTop: '6px', fontSize: '10px', color: 'var(--green)', fontWeight: 600 }}>
-                ✓ Lead details auto-populated below. Submitting will convert lead and create loan proposal under "Disbursal due".
-              </div>
-            </div>
-          )}
-
-          <div className="form-grid">
-            <label>Business name<input type="text" value={loanBusiness} onChange={e => setLoanBusiness(e.target.value)} placeholder="Registered business name" required/></label>
-            <label>Customer contact<input type="text" value={loanCustomer} onChange={e => setLoanCustomer(e.target.value)} placeholder="Borrower representative"/></label>
-            <label>Principal amount (₹)<input type="number" onWheel={e => (e.target as HTMLElement).blur()} value={loanPrincipal} onChange={e => setLoanPrincipal(e.target.value)} required/></label>
-            <label>Annual ROI (%)<input type="number" onWheel={e => (e.target as HTMLElement).blur()} value={loanRoi} onChange={e => setLoanRoi(e.target.value)} required/></label>
-            <label>Tenure (months)
-              <select value={loanTenure} onChange={e => setLoanTenure(e.target.value)}>
-                <option value="6">6 months</option>
-                <option value="12">12 months</option>
-                <option value="18">18 months</option>
-                <option value="24">24 months</option>
-                <option value="36">36 months</option>
-              </select>
-            </label>
-          </div>
-          <div className="modal-actions">
-            <Button variant="secondary" onClick={onClose} disabled={submitting}>Cancel</Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Processing...' : loanSourceMode === 'lead' ? 'Convert Lead to Loan Proposal' : 'Create direct loan'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-    )
-  }
 
   return (
     <Modal title="Add New Lead" subtitle="Capture prospect details and loan requirements" onClose={onClose}>
@@ -1777,6 +2304,8 @@ export default function App() {
   const [leads, setLeads] = useState<string[][]>([])
   const [loans, setLoans] = useState<string[][]>([])
   const [emis, setEmis] = useState<string[][]>([])
+  const [emisData, setEmisData] = useState<EmiItem[]>([])
+  const [payTargetEmi, setPayTargetEmi] = useState<EmiItem | null>(null)
   const [expenses, setExpenses] = useState<string[][]>([])
   const [transactions, setTransactions] = useState<string[][]>([])
 
@@ -1837,6 +2366,7 @@ export default function App() {
         }
 
         if (d.emis?.length) {
+          setEmisData(d.emis)
           setEmis(d.emis.map((e: { id: string; due_date: string; customer: string; loan_id: string; principal: number; interest: number; amount: number; status: string }) => [
             e.due_date,
             e.customer,
@@ -1971,7 +2501,11 @@ export default function App() {
       openAddCapital={() => { setModalTargetId(undefined); setModal('capital') }}
     />
   ) : screen === 'Leads' ? (
-    <Leads leads={leads} openAdd={() => { setModalTargetId(undefined); setModal('lead') }} convert={handleConvertLead}/>
+    <Leads
+      leads={leads}
+      openAdd={() => { setModalTargetId(undefined); setModal('lead') }}
+      convert={leadId => { setModalTargetId(leadId); setModal('convert-lead') }}
+    />
   ) : screen === 'Loans' ? (
     <Loans
       loans={loans}
@@ -1979,11 +2513,10 @@ export default function App() {
       openDisburse={id => { setModalTargetId(id); setModal('disburse') }}
       openCreate={() => { setModalTargetId(undefined); setModal('loan') }}
       openConvertLead={leadId => { setModalTargetId(leadId); setModal('convert-lead') }}
-      onConvertLead={handleConvertLead}
-      onApplyCalc={handleApplyCalc}
+      onSuccessCalc={notify}
     />
   ) : screen === 'Scheduled EMIs' ? (
-    <ScheduledEmis emis={emis} onPay={handlePayEmi}/>
+    <ScheduledEmis emis={emisData} onOpenPay={emi => { setPayTargetEmi(emi); setModal('pay-emi') }}/>
   ) : screen === 'Expenses' ? (
     <Expenses
       expenses={expenses}
@@ -2109,11 +2642,12 @@ export default function App() {
         <FormModal
           type={modal}
           targetId={modalTargetId}
+          targetEmi={payTargetEmi}
           availableBalance={masterWallet.available_balance}
           partners={partners}
           leads={leads}
-          onClose={() => setModal(null)}
-          onDone={notify}
+          onClose={() => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null) }}
+          onDone={msg => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null); notify(msg) }}
         />
       )}
 

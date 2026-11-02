@@ -55,6 +55,13 @@ function initDb() {
       payment_date TEXT DEFAULT '',
       payment_method TEXT DEFAULT '',
       proof_file TEXT DEFAULT '',
+      total_return REAL DEFAULT 0,
+      net_in_hand REAL DEFAULT 0,
+      advance_deducted REAL DEFAULT 0,
+      processing_fee REAL DEFAULT 0,
+      tenure_days INTEGER DEFAULT 0,
+      frequency_days INTEGER DEFAULT 0,
+      payable_emis INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -68,6 +75,13 @@ function initDb() {
       amount REAL NOT NULL,
       status TEXT NOT NULL DEFAULT 'Upcoming',
       paid_date TEXT DEFAULT '',
+      utr TEXT DEFAULT '',
+      payment_method TEXT DEFAULT '',
+      proof_file TEXT DEFAULT '',
+      installment_num INTEGER DEFAULT 1,
+      total_return REAL DEFAULT 0,
+      balance REAL DEFAULT 0,
+      cumulative_paid REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -95,12 +109,29 @@ function initDb() {
     );
   `);
 
-  // Ensure capital_invested column exists if upgrading an existing db
-  try {
-    db.exec(`ALTER TABLE wallets ADD COLUMN capital_invested REAL NOT NULL DEFAULT 0`);
-  } catch {
-    // Column already exists
-  }
+  // Safe migration helper for existing databases
+  const safeAddColumn = (table, colDef) => {
+    try {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${colDef}`);
+    } catch {}
+  };
+
+  safeAddColumn('wallets', 'capital_invested REAL NOT NULL DEFAULT 0');
+  safeAddColumn('loans', 'total_return REAL DEFAULT 0');
+  safeAddColumn('loans', 'net_in_hand REAL DEFAULT 0');
+  safeAddColumn('loans', 'advance_deducted REAL DEFAULT 0');
+  safeAddColumn('loans', 'processing_fee REAL DEFAULT 0');
+  safeAddColumn('loans', 'tenure_days INTEGER DEFAULT 0');
+  safeAddColumn('loans', 'frequency_days INTEGER DEFAULT 0');
+  safeAddColumn('loans', 'payable_emis INTEGER DEFAULT 0');
+
+  safeAddColumn('emis', 'utr TEXT DEFAULT ""');
+  safeAddColumn('emis', 'payment_method TEXT DEFAULT ""');
+  safeAddColumn('emis', 'proof_file TEXT DEFAULT ""');
+  safeAddColumn('emis', 'installment_num INTEGER DEFAULT 1');
+  safeAddColumn('emis', 'total_return REAL DEFAULT 0');
+  safeAddColumn('emis', 'balance REAL DEFAULT 0');
+  safeAddColumn('emis', 'cumulative_paid REAL DEFAULT 0');
 
   seedIfEmpty();
 }
@@ -296,42 +327,16 @@ function convertLead(leadId, customTerms = {}) {
   const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId);
   if (!lead) return null;
 
-  db.prepare("UPDATE leads SET status = 'Converted' WHERE id = ?").run(leadId);
+  const loanPayload = {
+    ...customTerms,
+    leadId,
+    business: lead.business,
+    customer: lead.contact_person || lead.business,
+    principal: customTerms.principal || lead.requirement
+  };
 
-  // Automatically create loan proposal with status 'Disbursal due'
-  const count = db.prepare('SELECT COUNT(*) as count FROM loans').get().count;
-  const loanId = `GE-2025-${String(count + 89).padStart(3, '0')}`;
-  const principal = Number(customTerms.principal || lead.requirement) || 500000;
-  const roi = Number(customTerms.roi) || 18;
-  const tenure = Number(customTerms.tenure) || 12;
-  const monthlyRate = roi / 1200;
-  const emi = customTerms.emi
-    ? Number(customTerms.emi)
-    : Math.round(principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1));
-
-  db.prepare(`
-    INSERT INTO loans (id, business, customer, principal, roi, tenure, emi, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'Disbursal due')
-  `).run(loanId, lead.business, lead.contact_person || lead.business, principal, roi, tenure, emi);
-
-  // Generate initial EMI schedule for the loan
-  const countEmis = db.prepare('SELECT COUNT(*) as count FROM emis').get().count;
-  const insertEmi = db.prepare(`
-    INSERT INTO emis (id, due_date, customer, loan_id, principal, interest, amount, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'Upcoming')
-  `);
-  const principalPart = Math.round(principal / tenure);
-  const interestPart = emi - principalPart;
-
-  const today = new Date();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  for (let i = 1; i <= Math.min(tenure, 3); i++) {
-    const dueDate = new Date(today.getFullYear(), today.getMonth() + i, 15);
-    const dateStr = `${dueDate.getDate()} ${months[dueDate.getMonth()]} ${dueDate.getFullYear()}`;
-    insertEmi.run(`EMI-${countEmis + i}`, dateStr, lead.business, loanId, principalPart, interestPart, emi);
-  }
-
-  return { lead: db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId), loanId };
+  const createdLoan = createLoan(loanPayload);
+  return { lead: db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId), loanId: createdLoan.id };
 }
 
 function getLoans() {
@@ -341,26 +346,39 @@ function getLoans() {
 function createLoan(loan) {
   const count = db.prepare('SELECT COUNT(*) as count FROM loans').get().count;
   const id = loan.id || `GE-2025-${String(count + 89).padStart(3, '0')}`;
-  const principal = Number(loan.principal) || 500000;
-  const roi = Number(loan.roi) || 18;
-  const tenure = Number(loan.tenure) || 12;
-  const monthlyRate = roi / 1200;
-  const emi = loan.emi
-    ? Number(loan.emi)
-    : Math.round(principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) / (Math.pow(1 + monthlyRate, tenure) - 1));
+  const principal = Number(loan.principal) || 1000000;
+  const multiplier = Number(loan.rateMultiplier || loan.roi) || 130;
+  const totalReturn = Number(loan.totalReturn) || Math.round(principal * (multiplier / 100));
+  const tenureDays = Number(loan.tenureDays) || (Number(loan.tenure) ? Number(loan.tenure) * 30 : 105);
+  const cycleDays = Number(loan.cycleDays || loan.frequencyDays) || 15;
+  const pfAmount = Number(loan.processingFee) || Math.round(principal * 0.05);
+  const advanceDeducted = Number(loan.advanceDeducted) || 0;
+  const netInHand = Number(loan.netInHand) || (principal - pfAmount - advanceDeducted);
+  const payableEmis = Number(loan.payableEmis) || Math.max(1, Math.round(tenureDays / cycleDays));
+  const remainingRepayment = totalReturn - advanceDeducted;
+  const emiAmount = Number(loan.emi || loan.perEmi) || Math.round(remainingRepayment / payableEmis);
 
   db.prepare(`
-    INSERT INTO loans (id, business, customer, principal, roi, tenure, emi, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO loans (
+      id, business, customer, principal, roi, tenure, emi, status,
+      total_return, net_in_hand, advance_deducted, processing_fee, tenure_days, frequency_days, payable_emis
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'Disbursal due', ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     loan.business || loan.customer,
     loan.customer || loan.business,
     principal,
-    roi,
-    tenure,
-    emi,
-    loan.status || 'Active'
+    multiplier,
+    Math.max(1, Math.round(tenureDays / 30)),
+    emiAmount,
+    totalReturn,
+    netInHand,
+    advanceDeducted,
+    pfAmount,
+    tenureDays,
+    cycleDays,
+    payableEmis
   );
 
   // If this loan was created from an existing lead, mark the lead as Converted
@@ -368,21 +386,66 @@ function createLoan(loan) {
     db.prepare("UPDATE leads SET status = 'Converted' WHERE id = ?").run(loan.leadId);
   }
 
-  // Generate initial EMI schedule for the loan
+  // Create all EMIs for this loan in the emis table
   const countEmis = db.prepare('SELECT COUNT(*) as count FROM emis').get().count;
-  const insertEmi = db.prepare(`
-    INSERT INTO emis (id, due_date, customer, loan_id, principal, interest, amount, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'Upcoming')
+  const insertEmiStmt = db.prepare(`
+    INSERT INTO emis (
+      id, due_date, customer, loan_id, principal, interest, amount, status,
+      installment_num, total_return, balance, cumulative_paid
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'Upcoming', ?, ?, ?, ?)
   `);
-  const principalPart = Math.round(principal / tenure);
-  const interestPart = emi - principalPart;
 
-  const today = new Date();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  for (let i = 1; i <= Math.min(tenure, 3); i++) {
-    const dueDate = new Date(today.getFullYear(), today.getMonth() + i, 15);
-    const dateStr = `${dueDate.getDate()} ${months[dueDate.getMonth()]} ${dueDate.getFullYear()}`;
-    insertEmi.run(`EMI-${countEmis + i}`, dateStr, loan.business || loan.customer, id, principalPart, interestPart, emi);
+  if (Array.isArray(loan.emiSchedule) && loan.emiSchedule.length > 0) {
+    loan.emiSchedule.forEach((item, idx) => {
+      const emiId = `EMI-${countEmis + idx + 1}`;
+      const amount = Number(item.amount) || emiAmount;
+      const principalPart = Number(item.principal) || Math.round(amount * 0.74);
+      const interestPart = Number(item.interest) || (amount - principalPart);
+      insertEmiStmt.run(
+        emiId,
+        item.dueDate || `${cycleDays * (idx + 1)} Days`,
+        loan.business || loan.customer,
+        id,
+        principalPart,
+        interestPart,
+        amount,
+        Number(item.num) || (idx + 1),
+        totalReturn,
+        Number(item.balance) || 0,
+        Number(item.cumulativePaid) || 0
+      );
+    });
+  } else {
+    // Generate full schedule programmatically
+    const startDate = loan.startDate ? new Date(loan.startDate) : new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const daysArr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const principalPart = Math.round((principal - advanceDeducted) / payableEmis);
+    const interestPart = emiAmount - principalPart;
+
+    let cumulative = 0;
+    for (let i = 1; i <= payableEmis; i++) {
+      const emiId = `EMI-${countEmis + i}`;
+      const dueDate = new Date(startDate.getTime() + (i * cycleDays * 24 * 60 * 60 * 1000));
+      const dateStr = `${String(dueDate.getDate()).padStart(2, '0')} ${months[dueDate.getMonth()]} ${dueDate.getFullYear()} (${daysArr[dueDate.getDay()]})`;
+      cumulative += emiAmount;
+      const balance = Math.max(0, remainingRepayment - cumulative);
+
+      insertEmiStmt.run(
+        emiId,
+        dateStr,
+        loan.business || loan.customer,
+        id,
+        principalPart,
+        interestPart,
+        emiAmount,
+        i,
+        totalReturn,
+        balance,
+        cumulative
+      );
+    }
   }
 
   return db.prepare('SELECT * FROM loans WHERE id = ?').get(id);
@@ -434,19 +497,27 @@ function getEmis() {
   return db.prepare('SELECT * FROM emis ORDER BY created_at DESC').all();
 }
 
-function payEmi(id) {
+function payEmi(id, { utr, paymentDate, paymentMethod, proofFile } = {}) {
   const emi = db.prepare('SELECT * FROM emis WHERE id = ?').get(id);
   if (!emi) return null;
 
   const now = new Date();
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  const defaultDate = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  const finalPaidDate = paymentDate || defaultDate;
+  const finalUtr = utr || '';
+  const finalMethod = paymentMethod || 'NEFT / RTGS';
+  const finalProof = proofFile || '';
 
   db.prepare(`
     UPDATE emis
-    SET status = 'Paid', paid_date = ?
+    SET status = 'Paid',
+        paid_date = ?,
+        utr = ?,
+        payment_method = ?,
+        proof_file = ?
     WHERE id = ?
-  `).run(dateStr, id);
+  `).run(finalPaidDate, finalUtr, finalMethod, finalProof, id);
 
   // Credit directly into Master Centralized Balance
   db.prepare(`
@@ -455,13 +526,14 @@ function payEmi(id) {
     WHERE id = 1
   `).run(emi.amount);
 
-  // Log transaction
+  // Log transaction with UTR details
   const countTxn = db.prepare('SELECT COUNT(*) as count FROM transactions').get().count;
   const txnId = `TXN-${240313 + countTxn}`;
+  const desc = finalUtr ? `EMI received (UTR: ${finalUtr})` : 'EMI received';
   db.prepare(`
     INSERT INTO transactions (id, date, description, party, type, amount, status)
-    VALUES (?, ?, 'EMI received', ?, 'Credit', ?, 'Completed')
-  `).run(txnId, dateStr, emi.customer, emi.amount);
+    VALUES (?, ?, ?, ?, 'Credit', ?, 'Completed')
+  `).run(txnId, finalPaidDate, desc, emi.customer, emi.amount);
 
   return db.prepare('SELECT * FROM emis WHERE id = ?').get(id);
 }

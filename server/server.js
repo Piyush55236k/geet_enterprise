@@ -221,10 +221,43 @@ app.get('/api/emis', (req, res) => {
   }
 });
 
+// Middleware for EMI payment proof upload handling
+const handleEmiUpload = (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    upload.single('proofFile')(req, res, next);
+  } else {
+    next();
+  }
+};
+
+app.post('/api/emis/:id/pay', handleEmiUpload, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { utr, paymentDate, paymentMethod } = req.body;
+    const proofFile = req.file ? req.file.filename : (req.body.proofFile || '');
+
+    const paid = db.payEmi(id, {
+      utr,
+      paymentDate,
+      paymentMethod,
+      proofFile
+    });
+
+    if (!paid) {
+      return res.status(404).json({ success: false, error: 'EMI record not found.' });
+    }
+    res.json({ success: true, data: paid });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.patch('/api/emis/:id/pay', (req, res) => {
   try {
     const { id } = req.params;
-    const paid = db.payEmi(id);
+    const { utr, paymentDate, paymentMethod, proofFile } = req.body;
+    const paid = db.payEmi(id, { utr, paymentDate, paymentMethod, proofFile });
     if (!paid) {
       return res.status(404).json({ success: false, error: 'EMI record not found.' });
     }
