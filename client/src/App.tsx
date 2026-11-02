@@ -742,7 +742,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
             </select>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div className="fe-row-2col">
             <div>
               <div className="fe-label">Borrower Business</div>
               <input
@@ -795,7 +795,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
             <div className="fe-helper">Rate {multiplierNum} → {multiplierNum}% Total Return</div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div className="fe-row-2col">
             <div>
               <div className="fe-label">Tenure (Days)</div>
               <input
@@ -848,7 +848,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                 ✕ Clear
               </button>
             </div>
-            <div style={{ background: '#f8faf8', border: '1px solid var(--line)', borderRadius: '4px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="fe-date-box">
               <div>
                 <span style={{ fontSize: '10px', color: 'var(--muted)', display: 'block' }}>Selected Date:</span>
                 <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{formatFullDate(startDate)}</strong>
@@ -953,7 +953,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
 
         {/* Right Output & Schedule Column */}
         <div className="fe-right">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' }}>
+          <div className="fe-statement-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '4px', background: 'var(--green-soft)', color: 'var(--green-dark)', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '12px' }}>
                 GE
@@ -963,7 +963,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                 <span style={{ display: 'block', fontSize: '10px', color: 'var(--muted)' }}>Geet Enterprise · Sanction Overview</span>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <div className="fe-actions-strip">
               <button type="button" className="fe-pill green" onClick={() => window.print()} style={{ cursor: 'pointer' }}>
                 🖨 PDF Download
               </button>
@@ -1025,7 +1025,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
           <div className="fe-split-bar">
             <div>
               <span style={{ fontSize: '10px', color: 'var(--muted)', display: 'block' }}>Advance Deduction & Repayment Split</span>
-              <div style={{ display: 'flex', gap: '14px', marginTop: '3px' }}>
+              <div className="fe-split-stats">
                 <span>Active EMIs: <strong>{payableEmis} Instalments ({deductedEmis} deducted)</strong></span>
                 <span>Adjusted Per EMI: <strong style={{ color: 'var(--green-dark)' }}>{money(adjustedPerEmi)}</strong></span>
                 <span>Remaining Repayment: <strong>{money(remainingRepayment)}</strong></span>
@@ -1048,7 +1048,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
           </div>
 
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div className="fe-schedule-head">
               <div>
                 <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>EMI Schedule ({schedule.length} Payable Instalments)</strong>
                 <span style={{ display: 'block', fontSize: '10px', color: 'var(--muted)' }}>
@@ -1064,7 +1064,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
               />
             </div>
 
-            <div style={{ maxHeight: '230px', overflowY: 'auto', border: '1px solid var(--line)', borderRadius: '4px', background: '#ffffff' }}>
+            <div className="fe-schedule-scroll">
               <table className="fe-schedule-table">
                 <thead>
                   <tr>
@@ -1090,7 +1090,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
                 </tbody>
               </table>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--muted)', marginTop: '6px', padding: '0 4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--muted)', marginTop: '6px', padding: '0 4px', flexWrap: 'wrap', gap: '4px' }}>
               <span>Showing {filteredSchedule.length} of {schedule.length} instalments</span>
               <span style={{ color: 'var(--green-dark)', fontWeight: 700 }}>Total Repayment: {money(remainingRepayment)}</span>
             </div>
@@ -1100,7 +1100,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
             <div style={{ fontSize: '11px', color: 'var(--ink)', fontWeight: 700, marginBottom: '8px' }}>
               Financial Statements and Distributions
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div className="fe-distribution-grid">
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--muted)', marginBottom: '4px' }}>
                   <span>Disbursement Ratio</span>
@@ -1133,7 +1133,7 @@ Total Repayment Balance: ${money(remainingRepayment)}`
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+          <div className="fe-actions-bar">
             {onCancel && (
               <Button variant="secondary" onClick={onCancel} disabled={submitting}>
                 Cancel
@@ -1141,19 +1141,9 @@ Total Repayment Balance: ${money(remainingRepayment)}`
             )}
             <button
               type="button"
+              className="fe-submit-btn"
               onClick={submitFundingPlan}
               disabled={submitting}
-              style={{
-                background: 'var(--green)',
-                color: '#ffffff',
-                border: 0,
-                borderRadius: '4px',
-                padding: '10px 22px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(91, 67, 214, 0.25)'
-              }}
             >
               {submitting
                 ? 'Processing Schedule...'
@@ -1533,7 +1523,7 @@ function ProfitLoss({
         action={<Button icon="plus" variant="secondary" onClick={openAddCapital}>Invest capital</Button>}
       >
         <div style={{ padding: '0 16px 8px' }}>
-          <div style={{ background: '#f8faf8', padding: '12px 16px', border: '1px solid var(--line)', marginBottom: '14px', fontSize: '11px', color: 'var(--muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ background: '#f8faf8', padding: '12px 16px', border: '1px solid var(--line)', marginBottom: '14px', fontSize: '11px', color: 'var(--muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <span>Distribution Formula: <strong>Partner Share % = (Partner Capital ÷ Total Capital) × 100</strong></span>
             <span>Net Profit Distributed = <strong>{money(pnl.netProfit)}</strong></span>
           </div>
@@ -1900,7 +1890,7 @@ function FormModal({
         subtitle="Geet Enterprise Calculation Engine · All EMIs generated into schedule"
         onClose={onClose}
       >
-        <div style={{ padding: '16px 20px' }}>
+        <div className="fe-modal-body">
           <FundingEngine
             leads={leads}
             preselectedLeadId={targetId}
@@ -1922,7 +1912,7 @@ function FormModal({
         subtitle="Sanction funding proposal and generate complete multi-installment EMI schedule"
         onClose={onClose}
       >
-        <div style={{ padding: '16px 20px' }}>
+        <div className="fe-modal-body">
           <FundingEngine
             leads={leads}
             isModal={true}
@@ -1943,7 +1933,7 @@ function FormModal({
         onClose={onClose}
       >
         <form onSubmit={submit} className="form">
-          <div className="confirmation-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          <div className="confirmation-strip emi-modal-strip">
             <div><span>Installment</span><strong>#{targetEmi.installment_num || 1} ({targetEmi.id})</strong></div>
             <div><span>Customer</span><strong>{targetEmi.customer}</strong></div>
             <div><span>Loan ID</span><strong>{targetEmi.loan_id}</strong></div>
@@ -2574,6 +2564,7 @@ export default function App() {
           </div>
           <div className="top-actions">
             <span
+              className="topbar-status-badge"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -2593,10 +2584,11 @@ export default function App() {
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  background: serverOnline ? '#22c55e' : '#f59e0b'
+                  background: serverOnline ? '#22c55e' : '#f59e0b',
+                  flexShrink: 0
                 }}
               />
-              {serverOnline ? 'Backend Online' : 'Connecting...'}
+              <span className="status-text">{serverOnline ? 'Backend Online' : 'Connecting...'}</span>
             </span>
 
             <button className="notification" onClick={() => notify('Central funds and ledger synced')}>
