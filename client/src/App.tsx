@@ -2271,7 +2271,25 @@ function Transactions({ transactions }: { transactions: string[][] }) {
 // -------------------------------------------------------------
 
 function Modal({ title, subtitle, children, onClose, large }: { title: string; subtitle: string; children: ReactNode; onClose: () => void; large?: boolean }) {
-  return <div className="modal-backdrop" onMouseDown={onClose}><div className={`modal ${large ? 'large' : ''}`} onMouseDown={e=>e.stopPropagation()}><div className="modal-head"><div><h2>{title}</h2><p>{subtitle}</p></div><button className="icon-button" onClick={onClose}><Icon name="close"/></button></div>{children}</div></div>
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <div className={`modal ${large ? 'large' : ''}`} onMouseDown={e => e.stopPropagation()}>
+        <div className="m-sheet-drag-handle" />
+        <div className="modal-head">
+          <div>
+            <h2>{title}</h2>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+          <button type="button" className="m-modal-close-btn" onClick={onClose} title="Close">
+            <Icon name="close" size={15} />
+          </button>
+        </div>
+        <div className="m-modal-body-scroll">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function FormModal({
