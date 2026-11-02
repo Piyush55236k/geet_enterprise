@@ -16,6 +16,7 @@ type IconName =
   | 'arrowUp' | 'arrowDown' | 'chevron' | 'download' | 'filter' | 'logout'
   | 'menu' | 'close' | 'check' | 'upload' | 'arrowRight' | 'arrowLeft'
   | 'home' | 'cards' | 'activity' | 'dots' | 'palette' | 'transfer' | 'request' | 'bills' | 'exchange' | 'eye' | 'eyeOff' | 'smartphone' | 'payments'
+  | 'bolt' | 'phone' | 'mail' | 'user' | 'building' | 'rupee' | 'calculator' | 'receipt' | 'fileText' | 'checkCircle' | 'clock' | 'chevronDown' | 'chevronUp'
 
 const iconPaths: Record<IconName, ReactNode> = {
   grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>,
@@ -55,10 +56,54 @@ const iconPaths: Record<IconName, ReactNode> = {
   eyeOff: <><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/></>,
   smartphone: <><rect x="5" y="2" width="14" height="20" rx="3" ry="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></>,
   payments: <><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2Z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></>,
+  bolt: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>,
+  phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>,
+  mail: <><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>,
+  user: <><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></>,
+  building: <><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></>,
+  rupee: <path d="M6 3h12M6 8h12M6 13l7.5 8M6 8a4.5 4.5 0 0 0 9 0M6 3v10"/>,
+  calculator: <><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01"/></>,
+  receipt: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M8 7h8M8 11h8M8 15h5"/></>,
+  fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>,
+  checkCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+  clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+  chevronDown: <polyline points="6 9 12 15 18 9"/>,
+  chevronUp: <polyline points="18 15 12 9 6 15"/>,
 }
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">{iconPaths[name]}</svg>
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{iconPaths[name]}</svg>
+}
+
+function MStatsGrid({ stats }: { stats: { label: string; value: string; sub?: string; tone?: 'green' | 'red' | 'blue' | 'amber' }[] }) {
+  return (
+    <div className="m-stats-grid">
+      {stats.map((s, i) => (
+        <div key={i} className={`m-stat-card ${s.tone ? `tone-${s.tone}` : ''}`}>
+          <div className="m-stat-label">{s.label}</div>
+          <div className="m-stat-val">{s.value}</div>
+          {s.sub && <div className="m-stat-sub">{s.sub}</div>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function MSearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <div className="m-search-wrap">
+      <div className="m-search-icon">
+        <Icon name="search" size={16}/>
+      </div>
+      <input
+        type="text"
+        className="m-search-input"
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+      />
+    </div>
+  )
 }
 
 const navItems: { name: Screen; icon: IconName }[] = [
@@ -265,83 +310,115 @@ function CapitalAndPartners({
 
   return (
     <>
-      <PageHeader
-        title="Capital & Partners"
-        eyebrow="Centralized Fund & Investor Equity"
-        actions={
-          <div className="header-actions">
-            <Button icon="plus" onClick={openAddCapital}>Add capital investment</Button>
-            <div className="central-managed"><Icon name="check" size={15}/> Central Master Pool</div>
+      {/* Mobile Master Wallet Hero */}
+      <div className="m-wallet-hero">
+        <div className="m-wallet-label">CENTRALIZED MASTER POOL</div>
+        <div className="m-wallet-bal">{money(masterWallet.available_balance)}</div>
+        <div className="m-wallet-sub">Liquid funds available for immediate loan disbursals</div>
+        <div className="m-wallet-stats-row">
+          <div>
+            <span style={{ fontSize: '9px', opacity: 0.75, display: 'block', textTransform: 'uppercase' }}>Total Capital</span>
+            <strong style={{ fontSize: '14px', fontFamily: 'Manrope' }}>{money(masterWallet.total_capital)}</strong>
           </div>
-        }
-      />
-      <div className="wallet-hero">
-        <div>
-          <span>CENTRALIZED LIQUID BALANCE</span>
-          <strong>{money(masterWallet.available_balance)}</strong>
-          <small>Central funds available for immediate loan disbursal</small>
-        </div>
-        <div className="wallet-divider"/>
-        <div className="wallet-stat">
-          <span>Total Capital Invested</span>
-          <strong>{money(masterWallet.total_capital)}</strong>
-        </div>
-        <div className="wallet-stat">
-          <span>Deployed in Loans</span>
-          <strong>{money(masterWallet.allocated_capital)}</strong>
-        </div>
-        <div className="wallet-access">
-          <Icon name="wallet" size={17}/>
-          <span>Master Balance</span>
-          <small>Operating expenses & disbursements debit directly from this pool</small>
+          <div>
+            <span style={{ fontSize: '9px', opacity: 0.75, display: 'block', textTransform: 'uppercase' }}>Deployed In Loans</span>
+            <strong style={{ fontSize: '14px', fontFamily: 'Manrope' }}>{money(masterWallet.allocated_capital)}</strong>
+          </div>
         </div>
       </div>
 
-      <SectionCard
-        title="Capital Partners & Investors"
-        subtitle="Individual capital invested into the centralized balance with dynamic equity share"
-        action={<Button icon="plus" variant="secondary" onClick={openAddCapital}>Invest new capital</Button>}
-      >
-        <div className="three-col" style={{ padding: '16px' }}>
-          {partners.map(p => (
-            <div className={`user-wallet wallet-${p.theme}`} key={p.id}>
-              <div className="user-head">
-                <span className="avatar small">{p.name.split(' ').map(x => x[0]).join('')}</span>
-                <div>
-                  <strong>{p.name}</strong>
-                  <small>{p.role}</small>
-                </div>
-                <Badge status={p.status || 'Active'}/>
-              </div>
-              <div className="wallet-split">
-                <div>
-                  <span>Capital Invested</span>
-                  <strong>{money(p.capitalInvested)}</strong>
-                </div>
-                <div>
-                  <span>Capital Share</span>
-                  <strong style={{ color: 'var(--green)' }}>{p.sharePct}%</strong>
-                </div>
-              </div>
-              <div style={{ margin: '8px 0 12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--muted)', marginBottom: '4px' }}>
-                  <span>Pro-rata pool equity</span>
-                  <span>{p.sharePct}%</span>
-                </div>
-                <div className="progress"><span style={{ width: `${Math.min(100, p.sharePct)}%` }}/></div>
-              </div>
-              <div className="wallet-owner">
-                <Icon name="chart" size={14}/>
-                <span>Distributed Net Profit: <strong>{money(p.netProfitShare)}</strong> ({p.roiPct}% ROI)</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
+      <div className="m-action-bar">
+        <button
+          type="button"
+          className="m-action-btn primary"
+          onClick={openAddCapital}
+        >
+          <Icon name="plus" size={16}/> Invest Capital
+        </button>
+      </div>
 
-      <SectionCard title="Central Capital History" subtitle="Disbursements, EMI receipts, capital investments and expenses" action={<SearchFilter placeholder="Search capital history..." value={query} onChange={setQuery}/>}>
-        <DataTable headers={['Reference', 'Date', 'Description', 'Party / Source', 'Type', 'Amount', 'Status']} rows={filtered}/>
-      </SectionCard>
+      {/* Partners List */}
+      <div className="m-section-header">
+        <h4 className="m-section-title">
+          <Icon name="userWallet" size={16}/> Capital Partners & Equity
+          <span className="m-count-badge">{partners.length}</span>
+        </h4>
+      </div>
+
+      {partners.map(p => (
+        <div className="m-partner-card" key={p.id}>
+          <div className="m-partner-head">
+            <div className="m-partner-avatar">{p.name.split(' ').map(x => x[0]).join('')}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>{p.name}</div>
+              <div style={{ fontSize: '11px', color: '#64748b' }}>{p.role}</div>
+            </div>
+            <Badge status={p.status || 'Active'}/>
+          </div>
+          <div className="m-card-grid">
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Capital Invested</span>
+              <span className="m-grid-value highlight">{money(p.capitalInvested)}</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Pool Equity Share</span>
+              <span className="m-grid-value highlight" style={{ color: 'var(--green)' }}>{p.sharePct}%</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Net Profit Share</span>
+              <span className="m-grid-value success">+{money(p.netProfitShare)}</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Annual ROI</span>
+              <span className="m-grid-value success">{p.roiPct}%</span>
+            </div>
+          </div>
+          <div style={{ marginTop: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748b', marginBottom: '3px' }}>
+              <span>Pro-rata Equity Share</span>
+              <span>{p.sharePct}%</span>
+            </div>
+            <div className="progress"><span style={{ width: `${Math.min(100, p.sharePct)}%` }}/></div>
+          </div>
+        </div>
+      ))}
+
+      {/* Central Capital History */}
+      <div className="m-section-header" style={{ marginTop: '20px' }}>
+        <h4 className="m-section-title">
+          <Icon name="transaction" size={16}/> Capital History & Flow
+          <span className="m-count-badge">{filtered.length}</span>
+        </h4>
+      </div>
+
+      <MSearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search capital transactions..."
+      />
+
+      {filtered.slice(0, 8).map((t, idx) => {
+        const isCredit = t[4] === 'Credit' || t[4] === 'Capital' || t[4] === 'EMI'
+        return (
+          <div className="m-card" key={`${t[0]}-${idx}`}>
+            <div className="m-card-head">
+              <div>
+                <div className="m-card-title">{t[2]}</div>
+                <div className="m-card-subtitle">{t[0]} · {t[1]}</div>
+              </div>
+              <span className={`badge ${isCredit ? 'badge-success' : 'badge-danger'}`}>
+                {t[4]}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>{t[3]}</span>
+              <strong style={{ fontSize: '15px', color: isCredit ? '#16a34a' : '#ef4444', fontFamily: 'Manrope' }}>
+                {isCredit ? '+' : '-'}{t[5]}
+              </strong>
+            </div>
+          </div>
+        )
+      })}
     </>
   )
 }
@@ -371,51 +448,98 @@ function Leads({
 
   return (
     <>
-      <PageHeader
-        title="Leads Pipeline"
-        eyebrow="Customer Acquisition & Conversion"
-        actions={<Button icon="plus" onClick={openAdd}>Add lead</Button>}
-      />
-      <div className="metrics-grid four">
-        <Metric label="Total Leads" value={String(leads.length)} note="Live pipeline"/>
-        <Metric label="Qualified Leads" value={String(qualifiedCount)} note="Ready to convert to loan" tone="green"/>
-        <Metric label="Converted to Loans" value={String(convertedCount)} note="Loans sanctioned" tone="blue"/>
-        <Metric label="Follow-ups Due" value={String(followUpCount)} note="Needs callback" tone="red"/>
+      <div className="m-action-bar">
+        <button
+          type="button"
+          className="m-action-btn primary"
+          onClick={openAdd}
+        >
+          <Icon name="plus" size={16}/> Add Customer Lead
+        </button>
       </div>
 
-      <div className="notice" style={{ marginBottom: '16px' }}>
-        <Icon name="check"/>
+      <MStatsGrid
+        stats={[
+          { label: 'Total Leads', value: String(leads.length), sub: 'Live pipeline' },
+          { label: 'Qualified Leads', value: String(qualifiedCount), sub: 'Ready to convert', tone: 'green' },
+          { label: 'Converted to Loans', value: String(convertedCount), sub: 'Loans sanctioned', tone: 'blue' },
+          { label: 'Follow-ups Due', value: String(followUpCount), sub: 'Needs callback', tone: 'red' }
+        ]}
+      />
+
+      <div className="m-notice-box">
+        <Icon name="bolt" size={16}/>
         <div>
-          <strong>Convert Lead to Loan Option</strong>
-          <span>Clicking "Convert to loan" directly creates a loan proposal in the Loans module with status "Disbursal due", calculates EMIs, and updates lead status to Converted.</span>
+          <strong>Convert Lead to Loan:</strong> Tap "Convert to Loan" on any qualified lead to open the funding calculator, generate all EMIs, and sanction loan funding.
         </div>
       </div>
 
-      <SectionCard title="Lead Register" subtitle="Review prospects and convert directly into active loans" action={<SearchFilter placeholder="Search customer or business..." value={query} onChange={setQuery}/>}>
-        <DataTable
-          headers={['Lead ID', 'Business', 'Contact person', 'Phone', 'Requirement', 'Source', 'Status']}
-          rows={filtered}
-          action={row => (
-            row[6] !== 'Converted' ? (
-              <button
-                className="table-action"
-                style={{
-                  background: 'var(--green-soft)',
-                  color: 'var(--green-dark)',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontWeight: 700
-                }}
-                onClick={() => convert(row[0], row[1])}
-              >
-                Convert to loan →
-              </button>
-            ) : (
-              <span className="badge badge-success"><span className="badge-dot"/>Converted</span>
-            )
-          )}
-        />
-      </SectionCard>
+      <MSearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search customer, business, or phone..."
+      />
+
+      <div className="m-section-header">
+        <h4 className="m-section-title">
+          <Icon name="leads" size={16}/> Customer Leads Pipeline
+          <span className="m-count-badge">{filtered.length}</span>
+        </h4>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="m-empty-card">
+          No customer leads found matching your search.
+        </div>
+      ) : (
+        filtered.map((lead, idx) => {
+          const isConverted = lead[6] === 'Converted'
+          return (
+            <div className="m-card" key={`${lead[0]}-${idx}`}>
+              <div className="m-card-head">
+                <div>
+                  <div className="m-card-title">{lead[1]}</div>
+                  <div className="m-card-subtitle">{lead[0]} · {lead[5] || 'Direct'}</div>
+                </div>
+                <Badge status={lead[6]}/>
+              </div>
+              <div className="m-card-grid">
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Contact Person</span>
+                  <span className="m-grid-value">{lead[2]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Phone</span>
+                  <span className="m-grid-value">{lead[3]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Funding Required</span>
+                  <span className="m-grid-value highlight">{lead[4]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Acquisition Source</span>
+                  <span className="m-grid-value">{lead[5] || 'Referral'}</span>
+                </div>
+              </div>
+              <div className="m-card-actions">
+                {!isConverted ? (
+                  <button
+                    type="button"
+                    className="m-touch-btn convert"
+                    onClick={() => convert(lead[0], lead[1])}
+                  >
+                    <Icon name="bolt" size={14}/> Convert to Loan Proposal →
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#16a34a', fontSize: '12px', fontWeight: 700, padding: '6px 0' }}>
+                    <Icon name="checkCircle" size={16}/> Converted into Active Loan
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })
+      )}
     </>
   )
 }
@@ -1189,105 +1313,205 @@ function Loans({
   onSuccessCalc: (msg: string) => void
 }) {
   const [query, setQuery] = useState('')
+  const [showCalculator, setShowCalculator] = useState(false)
   const unconvertedLeads = useMemo(() => leads.filter(l => l[6] !== 'Converted'), [leads])
 
-  const filtered = useMemo(() => {
+  const filteredLoans = useMemo(() => {
     if (!query) return loans
     return loans.filter(r => r.join(' ').toLowerCase().includes(query.toLowerCase()))
   }, [loans, query])
 
+  const totalPortfolio = loans.reduce((acc, l) => acc + (Number(l[3].replace(/[^0-9]/g, '')) || 0), 0) || 4500000
+  const activeCount = loans.filter(l => l[7] === 'Active').length
+  const disbursalDueCount = loans.filter(l => l[7] === 'Disbursal due').length
+
   return (
     <>
-      <PageHeader
-        title="Loans Portfolio"
-        eyebrow="Lending & Funding Engine"
-        actions={
-          <div className="header-actions">
-            <Button icon="leads" variant="secondary" onClick={() => openConvertLead()}>
-              Convert lead to loan
-            </Button>
-            <Button icon="plus" onClick={openCreate}>
-              Create direct loan
-            </Button>
-          </div>
-        }
-      />
-      <div className="metrics-grid four">
-        <Metric label="Total Loans Portfolio" value={money(loans.reduce((acc, l) => acc + (Number(l[3].replace(/[^0-9]/g, '')) || 0), 0) || 4500000)} note={`${loans.length} total loans`}/>
-        <Metric label="Active Loans" value={String(loans.filter(l => l[7] === 'Active').length)} note="Performing loans" tone="green"/>
-        <Metric label="Disbursals Due" value={String(loans.filter(l => l[7] === 'Disbursal due').length)} note="Requires fund release" tone="red"/>
-        <Metric label="Leads Ready to Convert" value={String(unconvertedLeads.length)} note="In acquisition pipeline" tone="blue"/>
+      {/* Mobile Top Action Bar */}
+      <div className="m-action-bar">
+        <button
+          type="button"
+          className="m-action-btn primary"
+          onClick={() => openConvertLead()}
+        >
+          <Icon name="bolt" size={16}/> Convert Lead
+        </button>
+        <button
+          type="button"
+          className="m-action-btn secondary"
+          onClick={openCreate}
+        >
+          <Icon name="plus" size={16}/> Direct Loan
+        </button>
+        <button
+          type="button"
+          className="m-action-btn secondary"
+          onClick={() => setShowCalculator(!showCalculator)}
+        >
+          <Icon name="calculator" size={16}/> Calc
+        </button>
       </div>
 
-      {/* Leads Option to Convert to Loan directly in Loans View */}
-      <SectionCard
-        title={`Convert Leads into Loans (${unconvertedLeads.length} Available)`}
-        subtitle="Prospects created in Leads module that can be directly converted into active loan proposals with all EMIs"
-        action={
-          unconvertedLeads.length > 0 ? (
-            <Button icon="leads" variant="secondary" onClick={() => openConvertLead()}>
-              Convert via modal
-            </Button>
-          ) : undefined
-        }
-      >
-        {unconvertedLeads.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
-            All leads have been converted into active loans. You can add new leads in the Leads tab.
+      {/* 2x2 Mobile Stats Grid */}
+      <MStatsGrid
+        stats={[
+          { label: 'Total Portfolio', value: money(totalPortfolio), sub: `${loans.length} total loans` },
+          { label: 'Active Performing', value: String(activeCount), sub: 'Performing loans', tone: 'green' },
+          { label: 'Disbursals Due', value: String(disbursalDueCount), sub: 'Fund release needed', tone: 'red' },
+          { label: 'Ready to Convert', value: String(unconvertedLeads.length), sub: 'In acquisition pipeline', tone: 'blue' }
+        ]}
+      />
+
+      {/* Collapsible Funding Calculator Engine */}
+      {showCalculator && (
+        <div className="m-collapse-box" style={{ marginBottom: '16px' }}>
+          <div className="m-collapse-head" onClick={() => setShowCalculator(false)}>
+            <div className="m-collapse-title">
+              <Icon name="calculator" size={16}/> Funding Engine Calculator
+            </div>
+            <Icon name="close" size={16}/>
           </div>
-        ) : (
-          <DataTable
-            headers={['Lead ID', 'Business', 'Contact person', 'Phone', 'Requirement', 'Source', 'Status']}
-            rows={unconvertedLeads}
-            action={row => (
-              <button
-                className="table-action"
-                style={{
-                  background: 'var(--green)',
-                  color: 'white',
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  fontWeight: 700
-                }}
-                onClick={() => openConvertLead(row[0])}
-              >
-                Convert to loan →
-              </button>
-            )}
-          />
+          <div style={{ padding: '4px' }}>
+            <FundingEngine leads={leads} onSuccess={msg => { onSuccessCalc(msg); setShowCalculator(false) }}/>
+          </div>
+        </div>
+      )}
+
+      {/* Section 1: Convert Leads into Loans */}
+      <div className="m-section-header">
+        <h4 className="m-section-title">
+          <Icon name="bolt" size={16}/> Leads Ready to Convert
+          <span className="m-count-badge">{unconvertedLeads.length}</span>
+        </h4>
+        {unconvertedLeads.length > 0 && (
+          <button
+            type="button"
+            className="mobile-activity-link"
+            onClick={() => openConvertLead()}
+          >
+            Modal View
+          </button>
         )}
-      </SectionCard>
+      </div>
 
-      <SectionCard title="Loan Portfolio" subtitle="All customer loans, disbursal status and EMI schedules" action={<SearchFilter placeholder="Search loan ID or customer..." value={query} onChange={setQuery}/>}>
-        <DataTable
-          headers={['Loan ID', 'Business', 'Customer', 'Principal', 'ROI', 'Tenure', 'EMI', 'Status']}
-          rows={filtered}
-          action={row => row[7] === 'Disbursal due' ? (
-            <button
-              className="table-action"
-              style={{
-                background: 'var(--green)',
-                color: 'white',
-                padding: '4px 10px',
-                borderRadius: '4px',
-                fontWeight: 700
-              }}
-              onClick={() => openDisburse(row[0])}
-            >
-              Disburse now
-            </button>
-          ) : (
-            <button className="table-action" onClick={() => alert(`Loan details: ${row[0]} · Business: ${row[1]} · Status: ${row[7]}`)}>
-              View details
-            </button>
-          )}
-        />
-      </SectionCard>
+      {unconvertedLeads.length === 0 ? (
+        <div className="m-empty-card">
+          <Icon name="checkCircle" size={24}/>
+          <div style={{ marginTop: '6px', fontWeight: 600 }}>All leads have been converted into loans!</div>
+          <div style={{ fontSize: '11px', marginTop: '2px' }}>Add new customer leads in the Leads tab.</div>
+        </div>
+      ) : (
+        unconvertedLeads.map(lead => (
+          <div className="m-card" key={lead[0]}>
+            <div className="m-card-head">
+              <div>
+                <div className="m-card-title">{lead[1]}</div>
+                <div className="m-card-subtitle">{lead[0]} · {lead[5] || 'Referral'}</div>
+              </div>
+              <Badge status={lead[6]}/>
+            </div>
+            <div className="m-card-grid">
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Contact Person</span>
+                <span className="m-grid-value">{lead[2]}</span>
+              </div>
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Phone</span>
+                <span className="m-grid-value">{lead[3]}</span>
+              </div>
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Requirement</span>
+                <span className="m-grid-value highlight">{lead[4]}</span>
+              </div>
+              <div className="m-grid-cell">
+                <span className="m-grid-label">Status</span>
+                <span className="m-grid-value success">{lead[6]}</span>
+              </div>
+            </div>
+            <div className="m-card-actions">
+              <button
+                type="button"
+                className="m-touch-btn convert"
+                onClick={() => openConvertLead(lead[0])}
+              >
+                <Icon name="bolt" size={14}/> Convert to Loan Proposal →
+              </button>
+            </div>
+          </div>
+        ))
+      )}
 
-      {/* Advanced Funding Calculator matching reference specifications */}
-      <SectionCard title="Funding Calculator Engine" subtitle="Calculate total return, advance deductions, and net in-hand disbursement">
-        <FundingEngine leads={leads} onSuccess={onSuccessCalc}/>
-      </SectionCard>
+      {/* Section 2: Active Loans Portfolio */}
+      <div className="m-section-header" style={{ marginTop: '20px' }}>
+        <h4 className="m-section-title">
+          <Icon name="loans" size={16}/> Customer Loans Portfolio
+          <span className="m-count-badge">{filteredLoans.length}</span>
+        </h4>
+      </div>
+
+      <MSearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search loan ID, business or customer..."
+      />
+
+      {filteredLoans.length === 0 ? (
+        <div className="m-empty-card">
+          No loans match your search.
+        </div>
+      ) : (
+        filteredLoans.map((loan, idx) => {
+          const isDisbursalDue = loan[7] === 'Disbursal due'
+          return (
+            <div className="m-card" key={`${loan[0]}-${idx}`}>
+              <div className="m-card-head">
+                <div>
+                  <div className="m-card-title">{loan[1]}</div>
+                  <div className="m-card-subtitle">{loan[0]} · Customer: {loan[2]}</div>
+                </div>
+                <Badge status={loan[7]}/>
+              </div>
+              <div className="m-card-grid">
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Principal</span>
+                  <span className="m-grid-value highlight">{loan[3]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Installment / EMI</span>
+                  <span className="m-grid-value highlight" style={{ color: 'var(--green)' }}>{loan[6]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">ROI Rate</span>
+                  <span className="m-grid-value">{loan[4]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Tenure</span>
+                  <span className="m-grid-value">{loan[5]}</span>
+                </div>
+              </div>
+              <div className="m-card-actions">
+                {isDisbursalDue ? (
+                  <button
+                    type="button"
+                    className="m-touch-btn disburse"
+                    onClick={() => openDisburse(loan[0])}
+                  >
+                    <Icon name="transfer" size={14}/> Disburse Loan Funds Now →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="m-touch-btn secondary"
+                    onClick={() => alert(`Loan details: ${loan[0]} · Business: ${loan[1]} · Status: ${loan[7]}`)}
+                  >
+                    <Icon name="fileText" size={14}/> View Loan Details
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })
+      )}
     </>
   )
 }
@@ -1306,14 +1530,12 @@ function ScheduledEmis({
   const [filterTab, setFilterTab] = useState<'All' | 'Paid' | 'Upcoming' | 'Overdue'>('All')
   const [query, setQuery] = useState('')
 
-  const counts = useMemo(() => {
-    return {
-      all: emis.length,
-      paid: emis.filter(e => e.status === 'Paid').length,
-      upcoming: emis.filter(e => e.status === 'Upcoming' || e.status === 'Scheduled').length,
-      overdue: emis.filter(e => e.status === 'Overdue').length,
-    }
-  }, [emis])
+  const counts = useMemo(() => ({
+    all: emis.length,
+    paid: emis.filter(e => e.status === 'Paid').length,
+    upcoming: emis.filter(e => e.status === 'Upcoming' || e.status === 'Scheduled').length,
+    overdue: emis.filter(e => e.status === 'Overdue').length,
+  }), [emis])
 
   const filtered = useMemo(() => {
     return emis.filter(e => {
@@ -1336,42 +1558,30 @@ function ScheduledEmis({
   const totalUpcoming = useMemo(() => emis.filter(e => e.status === 'Upcoming' || e.status === 'Scheduled').reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
   const totalOverdue = useMemo(() => emis.filter(e => e.status === 'Overdue').reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [emis])
 
-  const rows = filtered.map(e => [
-    `#${e.installment_num || 1}`,
-    e.due_date,
-    e.customer,
-    e.loan_id,
-    money(e.amount),
-    money(e.cumulative_paid || e.amount),
-    money(e.balance || 0),
-    e.status,
-    e.utr || '—'
-  ])
-
   return (
     <>
-      <PageHeader
-        title="Scheduled EMIs"
-        eyebrow="Repayment Calendar & Collections"
-        actions={<Button icon="download" variant="secondary" onClick={() => window.print()}>Export schedule</Button>}
+      {/* 2x2 Mobile Stats Grid */}
+      <MStatsGrid
+        stats={[
+          { label: 'Due This Period', value: money(totalDue || 842600), sub: `${emis.length} installments` },
+          { label: 'Collected to Pool', value: money(totalPaid), sub: `${counts.paid} installments collected`, tone: 'green' },
+          { label: 'Upcoming Collections', value: money(totalUpcoming), sub: `${counts.upcoming} pending`, tone: 'blue' },
+          { label: 'Overdue Accounts', value: money(totalOverdue), sub: `${counts.overdue} overdue`, tone: 'red' }
+        ]}
       />
-      <div className="metrics-grid four">
-        <Metric label="Due This Period" value={money(totalDue || 842600)} note={`${emis.length} installments`}/>
-        <Metric label="Collected to Central Balance" value={money(totalPaid)} note={`${counts.paid} installments collected`} tone="green"/>
-        <Metric label="Upcoming Collections" value={money(totalUpcoming)} note={`${counts.upcoming} pending`} tone="blue"/>
-        <Metric label="Overdue" value={money(totalOverdue)} note={`${counts.overdue} overdue accounts`} tone="red"/>
-      </div>
 
-      <div className="date-strip">
+      {/* Filter Pills */}
+      <div className="m-pills-row">
         {[
-          { id: 'All', label: `All installments · ${counts.all}` },
+          { id: 'All', label: `All · ${counts.all}` },
           { id: 'Paid', label: `Paid · ${counts.paid}` },
           { id: 'Upcoming', label: `Upcoming · ${counts.upcoming}` },
           { id: 'Overdue', label: `Overdue · ${counts.overdue}` },
         ].map(tab => (
           <button
-            className={filterTab === tab.id ? 'active' : ''}
             key={tab.id}
+            type="button"
+            className={`m-pill-btn ${filterTab === tab.id ? 'active' : ''}`}
             onClick={() => setFilterTab(tab.id as typeof filterTab)}
           >
             {tab.label}
@@ -1379,51 +1589,82 @@ function ScheduledEmis({
         ))}
       </div>
 
-      <SectionCard
-        title="EMI Repayments Register"
-        subtitle="Submit Bank UTR reference to mark installment as Paid and credit directly into Centralized Liquid Balance"
-        action={<SearchFilter placeholder="Search customer, loan ID or UTR..." value={query} onChange={setQuery}/>}
-      >
-        <DataTable
-          headers={['#', 'Due date', 'Customer', 'Loan ID', 'Amount', 'Cumulative Paid', 'Balance', 'Status', 'UTR Ref']}
-          rows={rows}
-          action={(row, index) => {
-            const item = filtered[index]
-            if (!item) return null
-            if (item.status === 'Paid') {
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <span className="badge badge-success"><span className="badge-dot"/>Paid</span>
-                  {item.utr ? (
-                    <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700, fontFamily: 'monospace' }}>
-                      UTR: {item.utr}
-                    </span>
-                  ) : null}
-                  {item.paid_date ? (
-                    <span style={{ fontSize: '9px', color: 'var(--muted)' }}>{item.paid_date}</span>
-                  ) : null}
+      <MSearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search customer, loan ID or UTR..."
+      />
+
+      <div className="m-section-header">
+        <h4 className="m-section-title">
+          <Icon name="calendar" size={16}/> EMI Repayment Schedule
+          <span className="m-count-badge">{filtered.length}</span>
+        </h4>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="m-empty-card">
+          No installments found matching this filter.
+        </div>
+      ) : (
+        filtered.map(item => {
+          const isPaid = item.status === 'Paid'
+          return (
+            <div className="m-card" key={item.id}>
+              <div className="m-card-head">
+                <div>
+                  <div className="m-card-title">Instalment #{item.installment_num || 1}</div>
+                  <div className="m-card-subtitle">{item.customer} · Loan: {item.loan_id}</div>
                 </div>
-              )
-            }
-            return (
-              <button
-                className="table-action"
-                style={{
-                  background: 'var(--green)',
-                  color: 'white',
-                  padding: '5px 12px',
-                  borderRadius: '4px',
-                  fontWeight: 700,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                }}
-                onClick={() => onOpenPay(item)}
-              >
-                Record Payment (Submit UTR) →
-              </button>
-            )
-          }}
-        />
-      </SectionCard>
+                <Badge status={item.status}/>
+              </div>
+              <div className="m-card-grid">
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Due Date</span>
+                  <span className="m-grid-value" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Icon name="calendar" size={13}/> {item.due_date}
+                  </span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">EMI Amount</span>
+                  <span className="m-grid-value highlight" style={{ color: '#2563eb' }}>{money(item.amount)}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Cumulative Paid</span>
+                  <span className="m-grid-value">{money(item.cumulative_paid || item.amount)}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Remaining Balance</span>
+                  <span className="m-grid-value">{money(item.balance || 0)}</span>
+                </div>
+              </div>
+              <div className="m-card-actions">
+                {isPaid ? (
+                  <div style={{ width: '100%', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 800 }}>✓ PAID</span>
+                      <span style={{ fontSize: '10px', color: '#64748b' }}>{item.paid_date}</span>
+                    </div>
+                    {item.utr && (
+                      <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#15803d', fontWeight: 700, marginTop: '2px' }}>
+                        Bank UTR: {item.utr}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="m-touch-btn pay"
+                    onClick={() => onOpenPay(item)}
+                  >
+                    <Icon name="payments" size={14}/> Submit Bank UTR (Mark Paid) →
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })
+      )}
     </>
   )
 }
@@ -1458,37 +1699,102 @@ function Expenses({
 
   return (
     <>
-      <PageHeader
-        title="Enterprise Expenses"
-        eyebrow="Operating & Administrative Outflows"
-        actions={<Button icon="plus" onClick={openAdd}>Add expense</Button>}
-      />
-      <div className="metrics-grid four">
-        <Metric label="Total Operating Expenses" value={money(totalSpent)} trend="-2.1%" tone="red"/>
-        <Metric label="Direct Central Balance Debits" value={money(totalSpent)} note="Debited from master pool" tone="blue"/>
-        <Metric label="Central Balance Available" value={money(availableBalance)} note="Funds remaining" tone="green"/>
-        <Metric label="Monthly Budget" value="₹2,00,000" note={`${Math.round((totalSpent / 200000) * 100)}% utilized`}/>
+      <div className="m-action-bar">
+        <button
+          type="button"
+          className="m-action-btn primary"
+          onClick={openAdd}
+        >
+          <Icon name="plus" size={16}/> Add Expense
+        </button>
       </div>
 
-      <div className="notice" style={{ background: '#f0fdf4', borderColor: '#22c55e', color: '#15803d' }}>
-        <Icon name="check"/>
+      <MStatsGrid
+        stats={[
+          { label: 'Total Operating Expenses', value: money(totalSpent), sub: 'Debited from pool', tone: 'red' },
+          { label: 'Central Debits', value: money(totalSpent), sub: 'Master wallet', tone: 'blue' },
+          { label: 'Available Balance', value: money(availableBalance), sub: 'Remaining funds', tone: 'green' },
+          { label: 'Monthly Budget', value: '₹2,00,000', sub: `${Math.round((totalSpent / 200000) * 100)}% utilized` }
+        ]}
+      />
+
+      <div className="m-notice-box">
+        <Icon name="checkCircle" size={16}/>
         <div>
-          <strong>Direct Centralized Balance Debit (Single User System)</strong>
-          <span>All operating expenses debit directly from the enterprise Centralized Balance (Master Fund). No individual user wallet is involved. Debited amounts reduce the net profit distributable to capital partners.</span>
+          <strong>Direct Central Balance Debit:</strong> All operating expenses debit directly from the Master Liquid Pool. No individual user wallets are used.
         </div>
       </div>
 
-      <SectionCard title="Expense Register" subtitle="Operational expenses, receipts, and direct central fund deductions" action={<SearchFilter placeholder="Search expenses..." value={query} onChange={setQuery}/>}>
-        <DataTable
-          headers={['Expense ID', 'Date', 'Description', 'Category', 'Amount', 'Submitted by', 'Status']}
-          rows={filtered}
-          action={row => row[6] === 'Pending' ? (
-            <button className="table-action" onClick={() => onApprove(row[0])}>Approve & Debit</button>
-          ) : (
-            <button className="table-action" onClick={() => alert(`Receipt verified in server/uploads for ${row[0]}`)}>View receipt</button>
-          )}
-        />
-      </SectionCard>
+      <MSearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search expenses..."
+      />
+
+      <div className="m-section-header">
+        <h4 className="m-section-title">
+          <Icon name="expense" size={16}/> Operating Expenses
+          <span className="m-count-badge">{filtered.length}</span>
+        </h4>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="m-empty-card">
+          No expenses recorded.
+        </div>
+      ) : (
+        filtered.map((exp, idx) => {
+          const isPending = exp[6] === 'Pending'
+          return (
+            <div className="m-card" key={`${exp[0]}-${idx}`}>
+              <div className="m-card-head">
+                <div>
+                  <div className="m-card-title">{exp[2]}</div>
+                  <div className="m-card-subtitle">{exp[0]} · {exp[1]} · {exp[3]}</div>
+                </div>
+                <Badge status={exp[6]}/>
+              </div>
+              <div className="m-card-grid">
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Amount Debited</span>
+                  <span className="m-grid-value highlight danger">−{exp[4]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Category</span>
+                  <span className="m-grid-value">{exp[3]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Submitted By</span>
+                  <span className="m-grid-value">{exp[5]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Fund Source</span>
+                  <span className="m-grid-value">Central Balance</span>
+                </div>
+              </div>
+              <div className="m-card-actions">
+                {isPending ? (
+                  <button
+                    type="button"
+                    className="m-touch-btn disburse"
+                    onClick={() => onApprove(exp[0])}
+                  >
+                    <Icon name="check" size={14}/> Approve & Debit Pool
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="m-touch-btn secondary"
+                    onClick={() => alert(`Receipt verified in server/uploads for ${exp[0]}`)}
+                  >
+                    <Icon name="receipt" size={14}/> View Receipt
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })
+      )}
     </>
   )
 }
@@ -1508,126 +1814,97 @@ function ProfitLoss({
 
   return (
     <>
-      <PageHeader
-        title="Profit & Loss Statement"
-        eyebrow="Financial Performance & Capital Distribution"
-        actions={
-          <div className="header-actions">
-            <select className="period-select" value={period} onChange={e => setPeriod(e.target.value)}>
-              <option>FY 2024–25 (Consolidated)</option>
-              <option>Q4 Current Quarter</option>
-              <option>This Month</option>
-            </select>
-            <Button icon="plus" onClick={openAddCapital}>Add capital</Button>
-            <Button icon="download" variant="secondary" onClick={() => window.print()}>Export statement</Button>
-          </div>
-        }
+      <div className="m-action-bar">
+        <button
+          type="button"
+          className="m-action-btn primary"
+          onClick={openAddCapital}
+        >
+          <Icon name="plus" size={16}/> Add Capital
+        </button>
+        <button
+          type="button"
+          className="m-action-btn secondary"
+          onClick={() => window.print()}
+        >
+          <Icon name="download" size={16}/> Export
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '14px' }}>
+        <select
+          className="period-select"
+          style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontWeight: 700, fontSize: '13px' }}
+          value={period}
+          onChange={e => setPeriod(e.target.value)}
+        >
+          <option>FY 2024–25 (Consolidated)</option>
+          <option>Q4 Current Quarter</option>
+          <option>This Month</option>
+        </select>
+      </div>
+
+      <MStatsGrid
+        stats={[
+          { label: 'Total Capital Invested', value: money(pnl.totalCapitalInvested), sub: 'Combined partner pool' },
+          { label: 'Gross Revenue', value: money(pnl.grossRevenue), sub: '+14.2% interest & fees', tone: 'green' },
+          { label: 'Operating Expenses', value: money(pnl.totalExpenses), sub: 'Central pool debits', tone: 'red' },
+          { label: 'Net Profit', value: money(pnl.netProfit), sub: `${pnl.profitMargin}% enterprise margin`, tone: 'green' }
+        ]}
       />
 
-      <div className="metrics-grid four">
-        <Metric label="Total Capital Invested" value={money(pnl.totalCapitalInvested)} note="Combined partner equity"/>
-        <Metric label="Gross Revenue" value={money(pnl.grossRevenue)} note={`Interest: ${money(pnl.interestEarned)} + Fees: ${money(pnl.processingFees)}`} trend="+14.2%" tone="green"/>
-        <Metric label="Operating Expenses" value={money(pnl.totalExpenses)} note="Debited from central balance" trend="-2.1%" tone="red"/>
-        <Metric label="Net Distributable Profit" value={money(pnl.netProfit)} note={`${pnl.profitMargin}% enterprise margin`} trend="+18.6%" tone="green"/>
+      <div className="m-section-header">
+        <h4 className="m-section-title">
+          <Icon name="chart" size={16}/> Partner Equity & P&L Distribution
+          <span className="m-count-badge">{pnl.distribution.length}</span>
+        </h4>
       </div>
 
-      {/* Capital-Based Profit & Loss Distribution Breakdown */}
-      <SectionCard
-        title="Capital-Based Profit & Loss Distribution"
-        subtitle="Net profit or loss is distributed dynamically pro-rata based on the exact capital invested by each user / partner"
-        action={<Button icon="plus" variant="secondary" onClick={openAddCapital}>Invest capital</Button>}
-      >
-        <div style={{ padding: '0 16px 8px' }}>
-          <div style={{ background: '#f8faf8', padding: '12px 16px', border: '1px solid var(--line)', marginBottom: '14px', fontSize: '11px', color: 'var(--muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <span>Distribution Formula: <strong>Partner Share % = (Partner Capital ÷ Total Capital) × 100</strong></span>
-            <span>Net Profit Distributed = <strong>{money(pnl.netProfit)}</strong></span>
-          </div>
+      <div className="m-notice-box" style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#475569' }}>
+        <Icon name="calculator" size={16}/>
+        <div>
+          <strong>Dynamic Pro-Rata Formula:</strong> Partner Share % = (Partner Capital ÷ Total Capital) × 100. Distributed Net Profit = <strong>{money(pnl.netProfit)}</strong>
         </div>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Partner / Investor</th>
-                <th>Capital Invested</th>
-                <th>Capital Share (%)</th>
-                <th>Gross Earnings Share</th>
-                <th>Operating Expense Share</th>
-                <th>Net Distributed Profit</th>
-                <th>Annual ROI</th>
-                <th>Payout Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pnl.distribution.map(p => (
-                <tr key={p.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="avatar small">{p.name.split(' ').map(x => x[0]).join('')}</span>
-                      <div>
-                        <strong style={{ fontSize: '12px' }}>{p.name}</strong>
-                        <div style={{ fontSize: '9px', color: 'var(--muted)' }}>{p.role}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td><strong>{money(p.capitalInvested)}</strong></td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 700, width: '45px' }}>{p.sharePct}%</span>
-                      <div className="progress" style={{ width: '60px', height: '6px' }}>
-                        <span style={{ width: `${Math.min(100, p.sharePct)}%` }}/>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{money(p.grossShare)}</td>
-                  <td style={{ color: 'var(--red)' }}>−{money(p.expenseShare)}</td>
-                  <td>
-                    <strong style={{ color: p.netProfitShare >= 0 ? '#176b4d' : 'var(--red)', fontSize: '13px' }}>
-                      {p.netProfitShare >= 0 ? '+' : ''}{money(p.netProfitShare)}
-                    </strong>
-                  </td>
-                  <td>
-                    <span style={{ fontWeight: 700, color: 'var(--green)' }}>{p.roiPct}%</span>
-                  </td>
-                  <td>
-                    <Badge status={p.status}/>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </SectionCard>
-
-      <div className="two-col report-grid" style={{ marginTop: '16px' }}>
-        <SectionCard title="Revenue vs Expenses Comparison" subtitle="Monthly movement">
-          <div className="grouped-bars">
-            {['Oct','Nov','Dec','Jan','Feb','Mar'].map((m,i)=>(
-              <div key={m}>
-                <div>
-                  <span className="income" style={{height:`${55+i*7}%`}}/>
-                  <span className="cost" style={{height:`${25+i*2}%`}}/>
-                </div>
-                <small>{m}</small>
-              </div>
-            ))}
-          </div>
-          <div className="chart-legend centered">
-            <span><i className="dot green"/>Gross Revenue (Interest & Fees)</span>
-            <span><i className="dot navy"/>Operating Expenses</span>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Portfolio Return Summary" subtitle="Key financial indicators">
-          <div className="pnl-list">
-            <div><span>Total Invested Capital</span><strong>{money(pnl.totalCapitalInvested)}</strong></div>
-            <div><span>Gross Interest Earned</span><strong>{money(pnl.interestEarned)}</strong></div>
-            <div><span>Sanction & Processing Fees</span><strong>{money(pnl.processingFees)}</strong></div>
-            <div><span>Operating Expenses (Central Debit)</span><strong>{money(pnl.totalExpenses)}</strong></div>
-            <div><span>Net Distributed Profit</span><strong style={{ color: 'var(--green)' }}>{money(pnl.netProfit)}</strong></div>
-          </div>
-        </SectionCard>
       </div>
+
+      {pnl.distribution.map(p => (
+        <div className="m-partner-card" key={p.id}>
+          <div className="m-partner-head">
+            <div className="m-partner-avatar">{p.name.split(' ').map(x => x[0]).join('')}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>{p.name}</div>
+              <div style={{ fontSize: '11px', color: '#64748b' }}>{p.role}</div>
+            </div>
+            <Badge status={p.status}/>
+          </div>
+          <div className="m-card-grid">
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Capital Invested</span>
+              <span className="m-grid-value highlight">{money(p.capitalInvested)}</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Equity Share</span>
+              <span className="m-grid-value highlight" style={{ color: 'var(--green)' }}>{p.sharePct}%</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Gross Earnings</span>
+              <span className="m-grid-value success">+{money(p.grossShare)}</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Expense Share</span>
+              <span className="m-grid-value danger">−{money(p.expenseShare)}</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Net Profit</span>
+              <span className="m-grid-value highlight success">+{money(p.netProfitShare)}</span>
+            </div>
+            <div className="m-grid-cell">
+              <span className="m-grid-label">Annual ROI</span>
+              <span className="m-grid-value success">{p.roiPct}%</span>
+            </div>
+          </div>
+        </div>
+      ))}
     </>
   )
 }
@@ -1659,29 +1936,110 @@ function Transactions({ transactions }: { transactions: string[][] }) {
 
   return (
     <>
-      <PageHeader
-        title="Financial Transactions"
-        eyebrow="Central Master Ledger"
-        actions={<Button icon="download" variant="secondary" onClick={exportCsv}>Export CSV</Button>}
-      />
-      <div className="ledger-balance">
-        <div><span>Total Credits (Inflow)</span><strong>₹18,42,650</strong><small>EMIs & Capital Added</small></div>
-        <div><span>Total Debits (Outflow)</span><strong>₹14,86,200</strong><small>Disbursements & Expenses</small></div>
-        <div><span>Net Movement</span><strong>+₹3,56,450</strong><small>Positive liquidity</small></div>
-      </div>
-      <SectionCard title="Master Ledger" subtitle={`${filtered.length} transactions recorded`} action={<div className="toolbar"><label className="search-field"><Icon name="search" size={17}/><input value={query} onChange={e => { setQuery(e.target.value); setPage(1) }} placeholder="Search ledger..."/></label><Button variant="secondary" icon="filter">Filters</Button></div>}>
-        <DataTable headers={['Reference','Date','Description','Party / Source','Type','Amount','Status']} rows={visible}/>
-        <div className="pagination">
-          <span>Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} of {filtered.length}</span>
-          <div>
-            <button disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Previous</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} className={page === p ? 'active' : ''} onClick={() => setPage(p)}>{p}</button>
-            ))}
-            <button disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Next</button>
-          </div>
+      {/* Mobile Inflow / Outflow summary */}
+      <div className="m-ledger-banner">
+        <div className="m-ledger-box">
+          <span>TOTAL CREDITS</span>
+          <strong style={{ color: '#16a34a' }}>+₹18.42L</strong>
+          <small style={{ fontSize: '9px', color: '#94a3b8' }}>EMIs & Capital</small>
         </div>
-      </SectionCard>
+        <div className="m-ledger-box">
+          <span>TOTAL DEBITS</span>
+          <strong style={{ color: '#ef4444' }}>-₹14.86L</strong>
+          <small style={{ fontSize: '9px', color: '#94a3b8' }}>Disbursals</small>
+        </div>
+        <div className="m-ledger-box">
+          <span>NET LIQUIDITY</span>
+          <strong style={{ color: '#2563eb' }}>+₹3.56L</strong>
+          <small style={{ fontSize: '9px', color: '#94a3b8' }}>Surplus</small>
+        </div>
+      </div>
+
+      <div className="m-action-bar">
+        <button
+          type="button"
+          className="m-action-btn secondary"
+          onClick={exportCsv}
+        >
+          <Icon name="download" size={16}/> Export Ledger CSV
+        </button>
+      </div>
+
+      <MSearchBar
+        value={query}
+        onChange={v => { setQuery(v); setPage(1) }}
+        placeholder="Search reference, customer or description..."
+      />
+
+      <div className="m-section-header">
+        <h4 className="m-section-title">
+          <Icon name="transaction" size={16}/> Central Financial Ledger
+          <span className="m-count-badge">{filtered.length}</span>
+        </h4>
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="m-empty-card">
+          No transactions found.
+        </div>
+      ) : (
+        visible.map((t, idx) => {
+          const isCredit = t[4] === 'Credit' || t[4] === 'Capital' || t[4] === 'EMI'
+          return (
+            <div className="m-card" key={`${t[0]}-${idx}`}>
+              <div className="m-card-head">
+                <div>
+                  <div className="m-card-title">{t[2]}</div>
+                  <div className="m-card-subtitle">{t[0]} · {t[1]}</div>
+                </div>
+                <Badge status={t[6] || 'Approved'}/>
+              </div>
+              <div className="m-card-grid">
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Party / Source</span>
+                  <span className="m-grid-value">{t[3]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Type</span>
+                  <span className="m-grid-value">{t[4]}</span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Amount</span>
+                  <span className={`m-grid-value highlight ${isCredit ? 'success' : 'danger'}`}>
+                    {isCredit ? '+' : '-'}{t[5]}
+                  </span>
+                </div>
+                <div className="m-grid-cell">
+                  <span className="m-grid-label">Status</span>
+                  <span className="m-grid-value">{t[6]}</span>
+                </div>
+              </div>
+            </div>
+          )
+        })
+      )}
+
+      {totalPages > 1 && (
+        <div className="m-pagination">
+          <button
+            type="button"
+            className="m-page-btn"
+            disabled={page === 1}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+          >
+            ← Previous
+          </button>
+          <span className="m-page-info">Page {page} of {totalPages}</span>
+          <button
+            type="button"
+            className="m-page-btn"
+            disabled={page === totalPages}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </>
   )
 }
@@ -2613,6 +2971,7 @@ export default function App() {
   const [modalTargetId, setModalTargetId] = useState<string | undefined>()
   const [toast, setToast] = useState('')
   const [serverOnline, setServerOnline] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   // Master State
   const [masterWallet, setMasterWallet] = useState({ total_capital: 4575000, available_balance: 1435450, allocated_capital: 3139550 })
@@ -2945,18 +3304,56 @@ export default function App() {
 
           <button
             type="button"
-            className={`dock-item ${['Loans', 'Expenses', 'Profit & Loss', 'Transactions'].includes(screen) ? 'active' : ''}`}
-            onClick={() => {
-              if (screen === 'Loans') setScreen('Expenses')
-              else if (screen === 'Expenses') setScreen('Profit & Loss')
-              else if (screen === 'Profit & Loss') setScreen('Transactions')
-              else setScreen('Loans')
-            }}
+            className={`dock-item ${['Loans', 'Expenses', 'Profit & Loss', 'Transactions'].includes(screen) || moreMenuOpen ? 'active' : ''}`}
+            onClick={() => setMoreMenuOpen(!moreMenuOpen)}
           >
             <Icon name="dots" size={20}/>
             <span>More</span>
           </button>
         </nav>
+
+        {/* More Menu Bottom Sheet */}
+        {moreMenuOpen && (
+          <div className="mobile-more-sheet" onClick={() => setMoreMenuOpen(false)}>
+            <div className="mobile-more-panel" onClick={e => e.stopPropagation()}>
+              <div className="mobile-more-title">All Enterprise Modules</div>
+              <div className="mobile-more-grid">
+                <button
+                  type="button"
+                  className={`mobile-more-item ${screen === 'Loans' ? 'active' : ''}`}
+                  onClick={() => { setScreen('Loans'); setMoreMenuOpen(false) }}
+                >
+                  <div className="mobile-more-icon violet"><Icon name="loans" size={18}/></div>
+                  <span>Loans Portfolio</span>
+                </button>
+                <button
+                  type="button"
+                  className={`mobile-more-item ${screen === 'Expenses' ? 'active' : ''}`}
+                  onClick={() => { setScreen('Expenses'); setMoreMenuOpen(false) }}
+                >
+                  <div className="mobile-more-icon amber"><Icon name="expense" size={18}/></div>
+                  <span>Expenses</span>
+                </button>
+                <button
+                  type="button"
+                  className={`mobile-more-item ${screen === 'Profit & Loss' ? 'active' : ''}`}
+                  onClick={() => { setScreen('Profit & Loss'); setMoreMenuOpen(false) }}
+                >
+                  <div className="mobile-more-icon green"><Icon name="chart" size={18}/></div>
+                  <span>Profit & Loss</span>
+                </button>
+                <button
+                  type="button"
+                  className={`mobile-more-item ${screen === 'Transactions' ? 'active' : ''}`}
+                  onClick={() => { setScreen('Transactions'); setMoreMenuOpen(false) }}
+                >
+                  <div className="mobile-more-icon blue"><Icon name="transaction" size={18}/></div>
+                  <span>Transactions</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {modal && (
