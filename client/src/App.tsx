@@ -15,7 +15,7 @@ type IconName =
   | 'expense' | 'chart' | 'transaction' | 'bell' | 'search' | 'plus'
   | 'arrowUp' | 'arrowDown' | 'chevron' | 'download' | 'filter' | 'logout'
   | 'menu' | 'close' | 'check' | 'upload' | 'arrowRight' | 'arrowLeft'
-  | 'home' | 'cards' | 'activity' | 'dots' | 'palette' | 'transfer' | 'request' | 'bills' | 'exchange' | 'eye' | 'eyeOff' | 'smartphone'
+  | 'home' | 'cards' | 'activity' | 'dots' | 'palette' | 'transfer' | 'request' | 'bills' | 'exchange' | 'eye' | 'eyeOff' | 'smartphone' | 'payments'
 
 const iconPaths: Record<IconName, ReactNode> = {
   grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>,
@@ -54,6 +54,7 @@ const iconPaths: Record<IconName, ReactNode> = {
   eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
   eyeOff: <><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/></>,
   smartphone: <><rect x="5" y="2" width="14" height="20" rx="3" ry="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></>,
+  payments: <><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2Z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></>,
 }
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
@@ -2445,7 +2446,7 @@ function MobileHome({
         </div>
       </div>
 
-      {/* 3. 4 Circular Quick Action Buttons */}
+      {/* 3. 4 Circular Quick Action Buttons from Reference Design */}
       <div className="mobile-quick-actions">
         <button type="button" className="quick-action-item" onClick={openAddLead}>
           <div className="quick-action-circle">
@@ -2453,7 +2454,7 @@ function MobileHome({
               <Icon name="transfer" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">+ Lead</span>
+          <span className="quick-action-label">Transfer</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={openConvertLead}>
@@ -2462,7 +2463,7 @@ function MobileHome({
               <Icon name="request" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">To Loan</span>
+          <span className="quick-action-label">Request</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={() => navigate('Scheduled EMIs')}>
@@ -2471,7 +2472,7 @@ function MobileHome({
               <Icon name="exchange" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">Pay EMI</span>
+          <span className="quick-action-label">Exchange</span>
         </button>
 
         <button type="button" className="quick-action-item" onClick={openAddExpense}>
@@ -2480,7 +2481,7 @@ function MobileHome({
               <Icon name="bills" size={17}/>
             </div>
           </div>
-          <span className="quick-action-label">+ Expense</span>
+          <span className="quick-action-label">Bills</span>
         </button>
       </div>
 
@@ -2603,9 +2604,6 @@ function Login({ onLogin }: { onLogin: () => void }) {
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(true)
-  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>(
-    typeof window !== 'undefined' && window.innerWidth <= 768 ? 'mobile' : 'desktop'
-  )
   const [balanceRevealed, setBalanceRevealed] = useState(false)
   const [themeMode, setThemeMode] = useState<'theme-violet' | 'theme-amber' | 'theme-cyan'>('theme-violet')
   const [screen, setScreen] = useState<Screen>('Dashboard')
@@ -2863,293 +2861,102 @@ export default function App() {
     <Transactions transactions={transactions}/>
   )
 
-  if (viewMode === 'mobile') {
-    return (
-      <div className={`mobile-simulator-stage ${themeMode}`}>
-        {/* Desktop control bar above phone */}
-        <div className="simulator-toolbar">
-          <strong>
-            <Icon name="smartphone" size={15}/> Geet Enterprise Mobile View
-          </strong>
-          <div className="simulator-mode-switch">
-            <button
-              type="button"
-              className={viewMode === 'mobile' ? 'active' : ''}
-              onClick={() => setViewMode('mobile')}
-            >
-              <Icon name="smartphone" size={12}/> Mobile
-            </button>
-            <button
-              type="button"
-              className={viewMode === 'desktop' ? 'active' : ''}
-              onClick={() => setViewMode('desktop')}
-            >
-              <Icon name="grid" size={12}/> Desktop
-            </button>
-          </div>
-        </div>
-
-        {/* Smartphone Device Frame */}
-        <div className="phone-device">
-          {/* Top Speaker Notch */}
-          <div className="phone-notch">
-            <div className="phone-notch-speaker"/>
-            <div className="phone-notch-camera"/>
-          </div>
-
-          {/* Status Bar */}
-          <div className="phone-status-bar">
-            <span>9:41</span>
-            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-              <span style={{ fontSize: '9px' }}>5G</span>
-              <span style={{ width: '16px', height: '9px', border: '1px solid white', borderRadius: '2px', display: 'inline-block', position: 'relative' }}>
-                <span style={{ position: 'absolute', inset: '1px', background: '#22c55e', borderRadius: '1px' }}/>
-              </span>
-            </div>
-          </div>
-
-          {/* Inner Phone Screen */}
-          <div className="phone-screen">
-            {screen === 'Dashboard' ? (
-              <MobileHome
-                masterWallet={masterWallet}
-                partners={partners}
-                emis={emis}
-                loans={loans}
-                expenses={expenses}
-                transactions={transactions}
-                pnl={pnl}
-                openAddLead={() => { setModalTargetId(undefined); setModal('lead') }}
-                openConvertLead={() => { setModalTargetId(undefined); setModal('convert-lead') }}
-                openAddExpense={() => { setModalTargetId(undefined); setModal('expense') }}
-                openAddCapital={() => { setModalTargetId(undefined); setModal('capital') }}
-                navigate={navigate}
-                balanceRevealed={balanceRevealed}
-                setBalanceRevealed={setBalanceRevealed}
-                themeMode={themeMode}
-                setThemeMode={setThemeMode}
-                notify={notify}
-                onLogout={() => setLoggedIn(false)}
-              />
-            ) : (
-              <div>
-                <div className="mobile-subpage-header">
-                  <button
-                    type="button"
-                    className="mobile-back-btn"
-                    onClick={() => setScreen('Dashboard')}
-                    title="Back to Home"
-                  >
-                    <Icon name="arrowLeft" size={16}/>
-                  </button>
-                  <h3 className="mobile-subpage-title">{screen}</h3>
-                </div>
-                <div className="mobile-subpage-content">
-                  {page}
-                </div>
-              </div>
-            )}
-
-            {/* Floating Mobile Bottom Navigation Dock */}
-            <nav className="mobile-bottom-dock">
-              <button
-                type="button"
-                className={`dock-item ${screen === 'Capital & Partners' ? 'active' : ''}`}
-                onClick={() => setScreen('Capital & Partners')}
-              >
-                <Icon name="cards" size={19}/>
-                <span>Capital</span>
-              </button>
-
-              <button
-                type="button"
-                className={`dock-item ${screen === 'Leads' ? 'active' : ''}`}
-                onClick={() => setScreen('Leads')}
-              >
-                <Icon name="activity" size={19}/>
-                <span>Leads</span>
-              </button>
-
-              {/* Elevated Floating Center Home Button */}
-              <button
-                type="button"
-                className="dock-item-center"
-                onClick={() => setScreen('Dashboard')}
-                title="Home Dashboard"
-              >
-                <Icon name="home" size={24}/>
-              </button>
-
-              <button
-                type="button"
-                className={`dock-item ${screen === 'Scheduled EMIs' ? 'active' : ''}`}
-                onClick={() => setScreen('Scheduled EMIs')}
-              >
-                <Icon name="calendar" size={19}/>
-                <span>EMIs</span>
-              </button>
-
-              <button
-                type="button"
-                className={`dock-item ${['Loans', 'Expenses', 'Profit & Loss', 'Transactions'].includes(screen) ? 'active' : ''}`}
-                onClick={() => {
-                  if (screen === 'Loans') setScreen('Expenses')
-                  else if (screen === 'Expenses') setScreen('Profit & Loss')
-                  else if (screen === 'Profit & Loss') setScreen('Transactions')
-                  else setScreen('Loans')
-                }}
-              >
-                <Icon name="dots" size={19}/>
-                <span>More</span>
-              </button>
-            </nav>
-          </div>
-
-          {/* Bottom Home Indicator Bar */}
-          <div className="phone-home-indicator"/>
-        </div>
-
-        {modal && (
-          <FormModal
-            type={modal}
-            targetId={modalTargetId}
-            targetEmi={payTargetEmi}
-            availableBalance={masterWallet.available_balance}
-            partners={partners}
-            leads={leads}
-            onClose={() => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null) }}
-            onDone={msg => { setModal(null); setModalTargetId(undefined); setPayTargetEmi(null); notify(msg) }}
-          />
-        )}
-
-        {toast && (
-          <div className="toast">
-            <span><Icon name="check"/></span>
-            {toast}
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
-    <div className={`app-shell ${themeMode}`}>
-      <aside className={`sidebar ${sidebar ? 'open' : ''}`}>
-        <div className="brand">
-          <div className="brand-mark">GE</div>
-          <div><strong>GEET</strong><span>ENTERPRISE</span></div>
-          <button className="mobile-close" onClick={() => setSidebar(false)}><Icon name="close"/></button>
-        </div>
-        <nav>
-          <span className="nav-label">WORKSPACE</span>
-          {navItems.map(item => (
-            <button
-              key={item.name}
-              className={screen === item.name ? 'active' : ''}
-              onClick={() => navigate(item.name)}
-            >
-              <Icon name={item.icon}/>
-              <span>{item.name}</span>
-              {screen === item.name && <i/>}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-foot">
-          <div className="fiscal">
-            <span>CAPITAL POOL</span>
-            <strong>{money(masterWallet.total_capital)}</strong>
-            <div className="progress"><span style={{ width: '92%' }}/></div>
-          </div>
-          <button onClick={() => setLoggedIn(false)}><Icon name="logout"/><span>Sign out</span></button>
-        </div>
-      </aside>
-
-      {sidebar && <button className="sidebar-overlay" onClick={() => setSidebar(false)}/>}
-
-      <div className="main-shell">
-        <header className="topbar">
-          <button className="menu-button" onClick={() => setSidebar(true)}><Icon name="menu"/></button>
-          <div className="top-search">
-            <Icon name="search"/>
-            <input placeholder="Search customers, loans, transactions..."/>
-            <kbd>⌘ K</kbd>
-          </div>
-          <div className="top-actions">
-            <button
-              type="button"
-              className="mobile-device-toggle-btn"
-              onClick={() => setViewMode('mobile')}
-              title="Open Mobile Screen View"
-            >
-              <Icon name="smartphone" size={16}/>
-              <span>Mobile View</span>
-            </button>
-
-            <span
-              className="topbar-status-badge"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: serverOnline ? '#15803d' : '#b45309',
-                background: serverOnline ? '#f0fdf4' : '#fffbeb',
-                border: `1px solid ${serverOnline ? '#bbf7d0' : '#fde68a'}`,
-                padding: '4px 10px',
-                borderRadius: '12px'
-              }}
-              title="Live Server Connection Status"
-            >
-              <span
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: serverOnline ? '#22c55e' : '#f59e0b',
-                  flexShrink: 0
-                }}
-              />
-              <span className="status-text">{serverOnline ? 'Backend Online' : 'Connecting...'}</span>
-            </span>
-
-            <button className="notification" onClick={() => notify('Central funds and ledger synced')}>
-              <Icon name="bell"/>
-              <i/>
-            </button>
-
-            {/* SINGLE USER PROFILE HEADER - NO USER SWITCHING DROPDOWN */}
-            <div className="profile-wrap">
-              <button className="profile" onClick={() => setProfile(!profile)}>
-                <span className="avatar">AD</span>
-                <span><strong>Administrator</strong><small>Geet Enterprise</small></span>
-                <Icon name="arrowDown" size={14}/>
+    <div className={`mobile-app-root ${themeMode}`}>
+      <div className="mobile-app-container">
+        {screen === 'Dashboard' ? (
+          <MobileHome
+            masterWallet={masterWallet}
+            partners={partners}
+            emis={emis}
+            loans={loans}
+            expenses={expenses}
+            transactions={transactions}
+            pnl={pnl}
+            openAddLead={() => { setModalTargetId(undefined); setModal('lead') }}
+            openConvertLead={() => { setModalTargetId(undefined); setModal('convert-lead') }}
+            openAddExpense={() => { setModalTargetId(undefined); setModal('expense') }}
+            openAddCapital={() => { setModalTargetId(undefined); setModal('capital') }}
+            navigate={navigate}
+            balanceRevealed={balanceRevealed}
+            setBalanceRevealed={setBalanceRevealed}
+            themeMode={themeMode}
+            setThemeMode={setThemeMode}
+            notify={notify}
+            onLogout={() => setLoggedIn(false)}
+          />
+        ) : (
+          <div className="mobile-subpage-wrap">
+            <div className="mobile-subpage-header">
+              <button
+                type="button"
+                className="mobile-back-btn"
+                onClick={() => setScreen('Dashboard')}
+                title="Back to Home"
+              >
+                <Icon name="arrowLeft" size={18}/>
               </button>
-              {profile && (
-                <div className="profile-menu">
-                  <div style={{ padding: '8px 12px 10px', borderBottom: '1px solid var(--line)' }}>
-                    <strong style={{ display: 'block', fontSize: '12px' }}>Geet Administrator</strong>
-                    <span style={{ fontSize: '10px', color: 'var(--muted)' }}>admin@geetenterprise.in</span>
-                  </div>
-                  <div style={{ padding: '8px 12px', fontSize: '10px', color: 'var(--muted)' }}>
-                    Single-User Admin Cockpit
-                  </div>
-                  <button onClick={() => { setProfile(false); setScreen('Dashboard') }}>
-                    Dashboard Overview
-                  </button>
-                  <button onClick={() => { setProfile(false); setScreen('Capital & Partners') }}>
-                    Capital & Partners
-                  </button>
-                  <button onClick={() => setLoggedIn(false)}>
-                    <Icon name="logout" size={15}/> Sign out
-                  </button>
-                </div>
-              )}
+              <h3 className="mobile-subpage-title">{screen}</h3>
+            </div>
+            <div className="mobile-subpage-content">
+              {page}
             </div>
           </div>
-        </header>
+        )}
 
-        <main>{page}</main>
+        {/* Floating Mobile Bottom Navigation Dock */}
+        <nav className="mobile-bottom-dock">
+          <button
+            type="button"
+            className={`dock-item ${screen === 'Capital & Partners' ? 'active' : ''}`}
+            onClick={() => setScreen('Capital & Partners')}
+          >
+            <Icon name="cards" size={20}/>
+            <span>Cards</span>
+          </button>
+
+          <button
+            type="button"
+            className={`dock-item ${screen === 'Leads' ? 'active' : ''}`}
+            onClick={() => setScreen('Leads')}
+          >
+            <Icon name="activity" size={20}/>
+            <span>Activity</span>
+          </button>
+
+          {/* Elevated Floating Center Home Button */}
+          <button
+            type="button"
+            className={`dock-item-center ${screen === 'Dashboard' ? 'active' : ''}`}
+            onClick={() => setScreen('Dashboard')}
+            title="Home Dashboard"
+          >
+            <Icon name="home" size={24}/>
+          </button>
+
+          <button
+            type="button"
+            className={`dock-item ${screen === 'Scheduled EMIs' ? 'active' : ''}`}
+            onClick={() => setScreen('Scheduled EMIs')}
+          >
+            <Icon name="payments" size={20}/>
+            <span>Payments</span>
+          </button>
+
+          <button
+            type="button"
+            className={`dock-item ${['Loans', 'Expenses', 'Profit & Loss', 'Transactions'].includes(screen) ? 'active' : ''}`}
+            onClick={() => {
+              if (screen === 'Loans') setScreen('Expenses')
+              else if (screen === 'Expenses') setScreen('Profit & Loss')
+              else if (screen === 'Profit & Loss') setScreen('Transactions')
+              else setScreen('Loans')
+            }}
+          >
+            <Icon name="dots" size={20}/>
+            <span>More</span>
+          </button>
+        </nav>
       </div>
 
       {modal && (
