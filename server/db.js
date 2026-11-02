@@ -13,6 +13,7 @@ function initDb() {
       name TEXT NOT NULL,
       role TEXT NOT NULL,
       theme TEXT NOT NULL,
+      capital_invested REAL NOT NULL DEFAULT 0,
       allocated REAL NOT NULL DEFAULT 0,
       available REAL NOT NULL DEFAULT 0,
       deployed REAL NOT NULL DEFAULT 0,
@@ -23,7 +24,7 @@ function initDb() {
     CREATE TABLE IF NOT EXISTS master_wallet (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       total_capital REAL NOT NULL DEFAULT 4575000,
-      available_balance REAL NOT NULL DEFAULT 1224600,
+      available_balance REAL NOT NULL DEFAULT 1525000,
       allocated_capital REAL NOT NULL DEFAULT 3350400,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -94,6 +95,13 @@ function initDb() {
     );
   `);
 
+  // Ensure capital_invested column exists if upgrading an existing db
+  try {
+    db.exec(`ALTER TABLE wallets ADD COLUMN capital_invested REAL NOT NULL DEFAULT 0`);
+  } catch {
+    // Column already exists
+  }
+
   seedIfEmpty();
 }
 
@@ -102,19 +110,28 @@ function seedIfEmpty() {
   if (masterCount === 0) {
     db.prepare(`
       INSERT INTO master_wallet (id, total_capital, available_balance, allocated_capital)
-      VALUES (1, 4575000, 1224600, 3350400)
+      VALUES (1, 4575000, 1525000, 3350400)
     `).run();
   }
 
+  // Ensure partners in wallets table with capital_invested
   const walletCount = db.prepare('SELECT COUNT(*) as count FROM wallets').get().count;
   if (walletCount === 0) {
     const insertWallet = db.prepare(`
-      INSERT INTO wallets (id, name, role, theme, allocated, available, deployed, recovery, utilization)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO wallets (id, name, role, theme, capital_invested, allocated, available, deployed, recovery, utilization)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    insertWallet.run('u1', 'Amit Sharma', 'Credit Manager', 'violet', 1420000, 482400, 937600, 218450, 66);
-    insertWallet.run('u2', 'Priya Mehta', 'Loan Officer', 'amber', 1150000, 316800, 833200, 184250, 72);
-    insertWallet.run('u3', 'Rohan Khanna', 'Collections', 'cyan', 780400, 208900, 571500, 264800, 73);
+    insertWallet.run('u1', 'Amit Sharma', 'Managing Partner & Investor', 'violet', 2000000, 1420000, 482400, 937600, 218450, 66);
+    insertWallet.run('u2', 'Priya Mehta', 'Senior Partner & Investor', 'amber', 1500000, 1150000, 316800, 833200, 184250, 72);
+    insertWallet.run('u3', 'Rohan Khanna', 'Capital Partner & Investor', 'cyan', 1075000, 780400, 208900, 571500, 264800, 73);
+  } else {
+    // Update existing partners to have accurate capital_invested if 0
+    const w1 = db.prepare("SELECT capital_invested FROM wallets WHERE id = 'u1'").get();
+    if (!w1 || w1.capital_invested === 0) {
+      db.prepare("UPDATE wallets SET capital_invested = 2000000, role = 'Managing Partner & Investor' WHERE id = 'u1'").run();
+      db.prepare("UPDATE wallets SET capital_invested = 1500000, role = 'Senior Partner & Investor' WHERE id = 'u2'").run();
+      db.prepare("UPDATE wallets SET capital_invested = 1075000, role = 'Capital Partner & Investor' WHERE id = 'u3'").run();
+    }
   }
 
   const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads').get().count;
@@ -161,10 +178,10 @@ function seedIfEmpty() {
       INSERT INTO expenses (id, date, description, category, amount, submitted_by, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    insertExp.run('EXP-0284', '10 Mar 2025', 'Office rent', 'Operations', 72000, 'Amit Sharma', 'Approved');
-    insertExp.run('EXP-0283', '08 Mar 2025', 'Legal documentation', 'Legal', 24600, 'Priya Mehta', 'Approved');
-    insertExp.run('EXP-0282', '07 Mar 2025', 'Credit bureau subscription', 'Technology', 18000, 'Amit Sharma', 'Pending');
-    insertExp.run('EXP-0281', '05 Mar 2025', 'Client meeting travel', 'Travel', 8450, 'Priya Mehta', 'Approved');
+    insertExp.run('EXP-0284', '10 Mar 2025', 'Office rent', 'Operations', 72000, 'Geet Admin', 'Approved');
+    insertExp.run('EXP-0283', '08 Mar 2025', 'Legal documentation', 'Legal', 24600, 'Geet Admin', 'Approved');
+    insertExp.run('EXP-0282', '07 Mar 2025', 'Credit bureau subscription', 'Technology', 18000, 'Geet Admin', 'Pending');
+    insertExp.run('EXP-0281', '05 Mar 2025', 'Client meeting travel', 'Travel', 8450, 'Geet Admin', 'Approved');
   }
 
   const txnCount = db.prepare('SELECT COUNT(*) as count FROM transactions').get().count;
@@ -175,9 +192,9 @@ function seedIfEmpty() {
     `);
     insertTxn.run('TXN-240312', '12 Mar 2025', 'EMI received', 'Mehta Textiles', 'Credit', 124500, 'Completed');
     insertTxn.run('TXN-240311', '11 Mar 2025', 'Loan disbursement', 'Rajesh Trading Co.', 'Debit', 800000, 'Completed');
-    insertTxn.run('TXN-240310', '10 Mar 2025', 'Capital allocation', 'Amit Sharma', 'Debit', 500000, 'Completed');
+    insertTxn.run('TXN-240310', '10 Mar 2025', 'Capital contribution', 'Amit Sharma', 'Credit', 2000000, 'Completed');
     insertTxn.run('TXN-240309', '09 Mar 2025', 'Processing fee', 'Verma Logistics', 'Credit', 18880, 'Completed');
-    insertTxn.run('TXN-240308', '08 Mar 2025', 'Office expense', 'Operations', 'Debit', 24600, 'Approved');
+    insertTxn.run('TXN-240308', '08 Mar 2025', 'Office expense', 'Central Balance / Operations', 'Debit', 24600, 'Approved');
     insertTxn.run('TXN-240307', '07 Mar 2025', 'EMI received', 'Patel Foods', 'Credit', 86200, 'Completed');
   }
 }
@@ -191,7 +208,65 @@ function getMasterWallet() {
 }
 
 function getWallets() {
-  return db.prepare('SELECT * FROM wallets ORDER BY id ASC').all();
+  return db.prepare('SELECT * FROM wallets ORDER BY capital_invested DESC').all();
+}
+
+function addCapitalInvestment({ partnerId, partnerName, amount, role }) {
+  const investAmount = Number(amount) || 0;
+  if (investAmount <= 0) return null;
+
+  let existing = null;
+  if (partnerId) {
+    existing = db.prepare('SELECT * FROM wallets WHERE id = ?').get(partnerId);
+  } else if (partnerName) {
+    existing = db.prepare('SELECT * FROM wallets WHERE LOWER(name) = LOWER(?)').get(partnerName);
+  }
+
+  if (existing) {
+    db.prepare(`
+      UPDATE wallets
+      SET capital_invested = capital_invested + ?,
+          allocated = allocated + ?
+      WHERE id = ?
+    `).run(investAmount, investAmount, existing.id);
+  } else {
+    const count = db.prepare('SELECT COUNT(*) as count FROM wallets').get().count;
+    const newId = `u${count + 1}`;
+    const name = partnerName || `Partner ${count + 1}`;
+    const partnerRole = role || 'Capital Partner & Investor';
+    const themes = ['violet', 'amber', 'cyan'];
+    const theme = themes[count % themes.length];
+    db.prepare(`
+      INSERT INTO wallets (id, name, role, theme, capital_invested, allocated, available, deployed, recovery, utilization)
+      VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0)
+    `).run(newId, name, partnerRole, theme, investAmount, investAmount);
+  }
+
+  // Update Master Wallet Centralized Balance and Total Capital
+  db.prepare(`
+    UPDATE master_wallet
+    SET total_capital = total_capital + ?,
+        available_balance = available_balance + ?
+    WHERE id = 1
+  `).run(investAmount, investAmount);
+
+  // Log transaction
+  const countTxn = db.prepare('SELECT COUNT(*) as count FROM transactions').get().count;
+  const txnId = `TXN-${240313 + countTxn}`;
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+  db.prepare(`
+    INSERT INTO transactions (id, date, description, party, type, amount, status)
+    VALUES (?, ?, 'Capital investment', ?, 'Credit', ?, 'Completed')
+  `).run(txnId, dateStr, partnerName || (existing ? existing.name : 'Capital Partner'), investAmount);
+
+  return {
+    masterWallet: getMasterWallet(),
+    partners: getWallets(),
+    pnl: getPnlDistribution()
+  };
 }
 
 function getLeads() {
@@ -221,7 +296,7 @@ function convertLead(leadId) {
   const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId);
   if (!lead) return null;
 
-  db.prepare("UPDATE leads SET status = 'Qualified' WHERE id = ?").run(leadId);
+  db.prepare("UPDATE leads SET status = 'Converted' WHERE id = ?").run(leadId);
 
   // Automatically create loan proposal with status 'Disbursal due'
   const count = db.prepare('SELECT COUNT(*) as count FROM loans').get().count;
@@ -235,7 +310,7 @@ function convertLead(leadId) {
   db.prepare(`
     INSERT INTO loans (id, business, customer, principal, roi, tenure, emi, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'Disbursal due')
-  `).run(loanId, lead.business, lead.contact_person, principal, roi, tenure, emi);
+  `).run(loanId, lead.business, lead.contact_person || lead.business, principal, roi, tenure, emi);
 
   return { lead: db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId), loanId };
 }
@@ -283,7 +358,7 @@ function createLoan(loan) {
   for (let i = 1; i <= Math.min(tenure, 3); i++) {
     const dueDate = new Date(today.getFullYear(), today.getMonth() + i, 15);
     const dateStr = `${dueDate.getDate()} ${months[dueDate.getMonth()]} ${dueDate.getFullYear()}`;
-    insertEmi.run(`EMI-${countEmis + i}`, dateStr, loan.business, id, principalPart, interestPart, emi);
+    insertEmi.run(`EMI-${countEmis + i}`, dateStr, loan.business || loan.customer, id, principalPart, interestPart, emi);
   }
 
   return db.prepare('SELECT * FROM loans WHERE id = ?').get(id);
@@ -308,12 +383,13 @@ function disburseLoan(id, { amount, utr, paymentDate, paymentMethod, proofFile }
     id
   );
 
-  // Update master wallet: decrease available balance, increase deployed
+  // Directly debit from Master Centralized Balance
   db.prepare(`
     UPDATE master_wallet
-    SET available_balance = MAX(0, available_balance - ?)
+    SET available_balance = MAX(0, available_balance - ?),
+        allocated_capital = allocated_capital + ?
     WHERE id = 1
-  `).run(disburseAmount);
+  `).run(disburseAmount, disburseAmount);
 
   // Log transaction
   const countTxn = db.prepare('SELECT COUNT(*) as count FROM transactions').get().count;
@@ -348,7 +424,7 @@ function payEmi(id) {
     WHERE id = ?
   `).run(dateStr, id);
 
-  // Update master wallet: credit payment
+  // Credit directly into Master Centralized Balance
   db.prepare(`
     UPDATE master_wallet
     SET available_balance = available_balance + ?
@@ -370,6 +446,7 @@ function getExpenses() {
   return db.prepare('SELECT * FROM expenses ORDER BY created_at DESC').all();
 }
 
+// DIRECT DEBIT FROM CENTRALIZED BALANCE (NOT USER'S OWN WALLET)
 function createExpense({ description, category, amount, submittedBy, receiptFile, date }) {
   const count = db.prepare('SELECT COUNT(*) as count FROM expenses').get().count;
   const id = `EXP-0${285 + count}`;
@@ -377,27 +454,27 @@ function createExpense({ description, category, amount, submittedBy, receiptFile
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const finalDate = date || `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
   const finalAmount = Number(amount) || 0;
-  const submitter = submittedBy || 'Amit Sharma';
+  const submitter = submittedBy || 'Enterprise Admin';
 
   db.prepare(`
     INSERT INTO expenses (id, date, description, category, amount, submitted_by, status, receipt_file)
     VALUES (?, ?, ?, ?, ?, ?, 'Approved', ?)
   `).run(id, finalDate, description, category, finalAmount, submitter, receiptFile || '');
 
-  // Log transaction
+  // Log transaction - Debited directly from Centralized Fund
   const countTxn = db.prepare('SELECT COUNT(*) as count FROM transactions').get().count;
   const txnId = `TXN-${240313 + countTxn}`;
   db.prepare(`
     INSERT INTO transactions (id, date, description, party, type, amount, status)
-    VALUES (?, ?, 'Office expense', ?, 'Debit', ?, 'Approved')
-  `).run(txnId, finalDate, category, finalAmount);
+    VALUES (?, ?, ?, ?, 'Debit', ?, 'Approved')
+  `).run(txnId, finalDate, `Operating expense: ${description}`, `Central Balance / ${category}`, finalAmount);
 
-  // Deduct from submitter's wallet
+  // DIRECT DEBIT FROM CENTRALIZED BALANCE (master_wallet)
   db.prepare(`
-    UPDATE wallets
-    SET available = MAX(0, available - ?)
-    WHERE name = ?
-  `).run(finalAmount, submitter);
+    UPDATE master_wallet
+    SET available_balance = MAX(0, available_balance - ?)
+    WHERE id = 1
+  `).run(finalAmount);
 
   return db.prepare('SELECT * FROM expenses WHERE id = ?').get(id);
 }
@@ -414,16 +491,82 @@ function getTransactions() {
   return db.prepare('SELECT * FROM transactions ORDER BY created_at DESC').all();
 }
 
+// ---------------------------------------------
+// Dynamic Profit & Loss Distribution by Capital
+// ---------------------------------------------
+function getPnlDistribution() {
+  // 1. Calculate Gross Revenue
+  const emiPaidInterest = db.prepare("SELECT COALESCE(SUM(interest), 0) as interest FROM emis WHERE status = 'Paid'").get().interest;
+  
+  // Historical interest income base + real paid interest
+  const baseHistoricalInterest = 428650;
+  const totalInterestEarned = baseHistoricalInterest + emiPaidInterest;
+
+  // Processing fees from loans (5% standard or recorded transactions)
+  const txFees = db.prepare("SELECT COALESCE(SUM(amount), 0) as fees FROM transactions WHERE description LIKE '%Processing fee%'").get().fees;
+  const totalProcessingFees = txFees > 0 ? txFees : 68400;
+
+  const grossRevenue = totalInterestEarned + totalProcessingFees;
+
+  // 2. Total Operating Expenses (Debited directly from Centralized Balance)
+  const expenseSum = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE status = 'Approved'").get().total;
+  const totalExpenses = expenseSum > 0 ? expenseSum : 123050;
+
+  // 3. Net Distributable Profit / (Loss)
+  const netProfit = grossRevenue - totalExpenses;
+
+  // 4. Partners / Investors and their Invested Capital
+  const partners = db.prepare('SELECT * FROM wallets ORDER BY capital_invested DESC').all();
+  const totalCapitalInvested = partners.reduce((sum, p) => sum + (Number(p.capital_invested) || 0), 0) || 4575000;
+
+  // Distribute based on capital ratio: (capital / totalCapital) * 100
+  const distribution = partners.map(p => {
+    const capital = Number(p.capital_invested) || 0;
+    const sharePct = Number(((capital / totalCapitalInvested) * 100).toFixed(2));
+    const grossShare = Math.round((grossRevenue * sharePct) / 100);
+    const expenseShare = Math.round((totalExpenses * sharePct) / 100);
+    const netProfitShare = Math.round((netProfit * sharePct) / 100);
+    const roiPct = capital > 0 ? Number(((netProfitShare / capital) * 100).toFixed(2)) : 0;
+
+    return {
+      id: p.id,
+      name: p.name,
+      role: p.role,
+      theme: p.theme,
+      capitalInvested: capital,
+      sharePct,
+      grossShare,
+      expenseShare,
+      netProfitShare,
+      roiPct,
+      status: netProfitShare >= 0 ? 'Profitable' : 'Deficit'
+    };
+  });
+
+  return {
+    grossRevenue,
+    interestEarned: totalInterestEarned,
+    processingFees: totalProcessingFees,
+    totalExpenses,
+    netProfit,
+    profitMargin: Number(((netProfit / (grossRevenue || 1)) * 100).toFixed(1)),
+    totalCapitalInvested,
+    distribution
+  };
+}
+
 // Full Initial Data Hydration
 function getInitialData() {
   return {
     masterWallet: getMasterWallet(),
+    partners: getWallets(),
     wallets: getWallets(),
     leads: getLeads(),
     loans: getLoans(),
     emis: getEmis(),
     expenses: getExpenses(),
-    transactions: getTransactions()
+    transactions: getTransactions(),
+    pnl: getPnlDistribution()
   };
 }
 
@@ -433,6 +576,7 @@ module.exports = {
   db,
   getMasterWallet,
   getWallets,
+  addCapitalInvestment,
   getLeads,
   createLead,
   convertLead,
@@ -445,5 +589,6 @@ module.exports = {
   createExpense,
   approveExpense,
   getTransactions,
+  getPnlDistribution,
   getInitialData
 };

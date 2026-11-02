@@ -68,12 +68,36 @@ app.get('/api/initial-data', (req, res) => {
   }
 });
 
-// Wallets
+// Wallets & Partners
 app.get('/api/wallets', (req, res) => {
   try {
     const master = db.getMasterWallet();
-    const users = db.getWallets();
-    res.json({ success: true, master, users });
+    const partners = db.getWallets();
+    res.json({ success: true, master, users: partners, partners });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Capital Investment (Partner equity injection)
+app.post('/api/capital/invest', (req, res) => {
+  try {
+    const { partnerId, partnerName, amount, role } = req.body;
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, error: 'Valid investment amount is required.' });
+    }
+    const result = db.addCapitalInvestment({ partnerId, partnerName, amount: Number(amount), role });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Profit and Loss Distribution
+app.get('/api/pnl', (req, res) => {
+  try {
+    const pnl = db.getPnlDistribution();
+    res.json({ success: true, data: pnl });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -241,7 +265,7 @@ app.post('/api/expenses', handleExpenseUpload, (req, res) => {
       description,
       category: category || 'Operations',
       amount: Number(amount) || 0,
-      submittedBy: submittedBy || 'Amit Sharma',
+      submittedBy: submittedBy || 'Enterprise Admin',
       receiptFile,
       date
     });
@@ -303,3 +327,4 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
