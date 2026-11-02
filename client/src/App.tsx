@@ -3865,18 +3865,20 @@ export default function App() {
             type="button"
             className={`dock-item ${screen === 'Capital & Partners' ? 'active' : ''}`}
             onClick={() => setScreen('Capital & Partners')}
+            title="Financers & Capital Partners"
           >
-            <Icon name="cards" size={20}/>
-            <span>Cards</span>
+            <Icon name="userWallet" size={20}/>
+            <span>Financers</span>
           </button>
 
           <button
             type="button"
             className={`dock-item ${screen === 'Leads' ? 'active' : ''}`}
             onClick={() => setScreen('Leads')}
+            title="Leads Pipeline & Attribution"
           >
-            <Icon name="activity" size={20}/>
-            <span>Activity</span>
+            <Icon name="leads" size={20}/>
+            <span>Leads</span>
           </button>
 
           {/* Elevated Floating Center Home Button */}
@@ -3893,15 +3895,17 @@ export default function App() {
             type="button"
             className={`dock-item ${screen === 'Scheduled EMIs' ? 'active' : ''}`}
             onClick={() => setScreen('Scheduled EMIs')}
+            title="Scheduled EMIs & Collections"
           >
-            <Icon name="payments" size={20}/>
-            <span>Payments</span>
+            <Icon name="calendar" size={20}/>
+            <span>EMIs</span>
           </button>
 
           <button
             type="button"
             className={`dock-item ${['Loans', 'Expenses', 'Profit & Loss', 'Transactions'].includes(screen) || moreMenuOpen ? 'active' : ''}`}
             onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+            title="More Modules"
           >
             <Icon name="dots" size={20}/>
             <span>More</span>
