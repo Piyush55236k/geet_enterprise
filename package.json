@@ -8,6 +8,7 @@
     "build:client": "npm --prefix client run build",
     "copy:client": "node -e \"const fs=require('fs'); if(fs.existsSync('client/dist')){fs.cpSync('client/dist','server/public',{recursive:true,force:true});console.log('Synchronized client/dist to server/public');}\"",
     "build": "npm run build:client && npm run copy:client",
+    "zip": "powershell -ExecutionPolicy Bypass -File make-zip.ps1",
     "server": "npm --prefix server run dev",
     "client": "npm --prefix client run dev",
     "install:all": "npm --prefix server install && npm --prefix client install",
